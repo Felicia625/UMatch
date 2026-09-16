@@ -1,0 +1,109 @@
+mutation CreateUser($email: String!, $fullName: String!, $major: String!, $bio: String, $avatarUrl: String, $graduationYear: Int) @auth(level: USER) {
+  user_insert(data: {id_expr: "auth.uid", email: $email, fullName: $fullName, major: $major, bio: $bio, avatarUrl: $avatarUrl, graduationYear: $graduationYear})
+}
+
+mutation UpdateUser($fullName: String, $bio: String, $avatarUrl: String, $graduationYear: Int) @auth(level: USER) {
+  user_update(key: {id_expr: "auth.uid"}, data: {fullName: $fullName, bio: $bio, avatarUrl: $avatarUrl, graduationYear: $graduationYear})
+}
+
+mutation DeleteUser @auth(level: USER) {
+  user_delete(key: {id_expr: "auth.uid"})
+}
+
+query GetMe @auth(level: USER) {
+  user(key: {id_expr: "auth.uid"}) {
+    email fullName major bio avatarUrl graduationYear
+  }
+}
+
+query ListUsers @auth(level: PUBLIC, insecureReason: "Listing users is permitted for public directory discovery.") {
+  users(limit: 50) {
+    fullName major graduationYear
+  }
+}
+
+mutation CreateCourse($courseCode: String!, $courseTitle: String!, $department: String) @auth(level: PUBLIC, insecureReason: "Courses are public university data.") {
+  course_insert(data: {courseCode: $courseCode, courseTitle: $courseTitle, department: $department})
+}
+
+mutation UpdateCourse($id: UUID!, $courseTitle: String, $department: String) @auth(level: PUBLIC, insecureReason: "Admin-level editing intended, public access used per requirements.") {
+  course_update(id: $id, data: {courseTitle: $courseTitle, department: $department})
+}
+
+mutation DeleteCourse($id: UUID!) @auth(level: PUBLIC, insecureReason: "Deleting public course records.") {
+  course_delete(id: $id)
+}
+
+query GetCourse($id: UUID!) @auth(level: PUBLIC, insecureReason: "Public course lookup.") {
+  course(id: $id) {
+    courseCode courseTitle department
+  }
+}
+
+query ListCourses @auth(level: PUBLIC, insecureReason: "Public course list.") {
+  courses(limit: 100) {
+    courseCode courseTitle
+  }
+}
+
+mutation Enroll($courseId: UUID!) @auth(level: USER) {
+  enrollment_insert(data: {userId_expr: "auth.uid", courseId: $courseId})
+}
+
+mutation Unenroll($courseId: UUID!) @auth(level: USER) {
+  enrollment_delete(key: {userId_expr: "auth.uid", courseId: $courseId})
+}
+
+query ListMyEnrollments @auth(level: USER) {
+  enrollments(where: {userId: {eq_expr: "auth.uid"}}) {
+    course { courseCode courseTitle }
+  }
+}
+
+mutation CreateGroup($name: String!, $description: String!, $category: String!, $imageUrl: String, $isPrivate: Boolean) @auth(level: USER) {
+  group_insert(data: {name: $name, description: $description, category: $category, imageUrl: $imageUrl, isPrivate: $isPrivate})
+}
+
+mutation UpdateGroup($id: UUID!, $description: String, $isPrivate: Boolean) @auth(level: USER) {
+  group_update(id: $id, data: {description: $description, isPrivate: $isPrivate})
+}
+
+mutation DeleteGroup($id: UUID!) @auth(level: USER) {
+  group_delete(id: $id)
+}
+
+query GetGroup($id: UUID!) @auth(level: PUBLIC, insecureReason: "Public group information.") {
+  group(id: $id) {
+    name description category
+  }
+}
+
+query ListGroups @auth(level: PUBLIC, insecureReason: "Publicly discoverable groups.") {
+  groups(limit: 50) {
+    name category
+  }
+}
+
+mutation CreateEvent($title: String!, $startTime: Timestamp!, $location: String!, $groupId: UUID!, $description: String, $maxAttendees: Int) @auth(level: USER) {
+  event_insert(data: {title: $title, startTime: $startTime, location: $location, groupId: $groupId, description: $description, maxAttendees: $maxAttendees})
+}
+
+mutation UpdateEvent($id: UUID!, $description: String, $maxAttendees: Int) @auth(level: USER) {
+  event_update(id: $id, data: {description: $description, maxAttendees: $maxAttendees})
+}
+
+mutation DeleteEvent($id: UUID!) @auth(level: USER) {
+  event_delete(id: $id)
+}
+
+query GetEvent($id: UUID!) @auth(level: PUBLIC, insecureReason: "Public event details.") {
+  event(id: $id) {
+    title startTime location description
+  }
+}
+
+query ListEvents @auth(level: PUBLIC, insecureReason: "Public event listing.") {
+  events(limit: 50, orderBy: [{startTime: ASC}]) {
+    title startTime location
+  }
+}

@@ -1,0 +1,32 @@
+mutation CreateSeedData @transaction {
+  user_insertMany(data: [
+    { email: "alice@example.com", fullName: "Alice Smith", major: "Computer Science", bio: "FDC enthusiast", graduationYear: 2025 },
+    { email: "bob@example.com", fullName: "Bob Jones", major: "Mathematics", bio: "Data nerd", graduationYear: 2026 },
+    { email: "charlie@example.com", fullName: "Charlie Brown", major: "Physics", bio: "Physics lover", graduationYear: 2025 }
+  ])
+  course_insertMany(data: [
+    { courseCode: "CS101", courseTitle: "Intro to Computer Science", department: "Computer Science" },
+    { courseCode: "MATH201", courseTitle: "Linear Algebra", department: "Mathematics" },
+    { courseCode: "PHYS301", courseTitle: "Quantum Mechanics", department: "Physics" }
+  ])
+  group_insertMany(data: [
+    { name: "Dev Club", description: "Coding sessions", category: "Academic", isPrivate: false },
+    { name: "Math Society", description: "Solving problems", category: "Academic", isPrivate: false },
+    { name: "Physics Lab", description: "Lab work", category: "Academic", isPrivate: true }
+  ])
+  enrollment_insertMany(data: [
+    { userId: "00000000-0000-0000-0000-000000000001", courseId: "00000000-0000-0000-0000-000000000001" },
+    { userId: "00000000-0000-0000-0000-000000000002", courseId: "00000000-0000-0000-0000-000000000002" },
+    { userId: "00000000-0000-0000-0000-000000000003", courseId: "00000000-0000-0000-0000-000000000003" }
+  ])
+  userGroup_insertMany(data: [
+    { userId: "00000000-0000-0000-0000-000000000001", groupId: "00000000-0000-0000-0000-000000000001", role: "member" },
+    { userId: "00000000-0000-0000-0000-000000000002", groupId: "00000000-0000-0000-0000-000000000002", role: "admin" },
+    { userId: "00000000-0000-0000-0000-000000000003", groupId: "00000000-0000-0000-0000-000000000003", role: "member" }
+  ])
+  event_insertMany(data: [
+    { title: "Hackathon", startTime: "2024-12-01T10:00:00Z", location: "Building A", groupId: "00000000-0000-0000-0000-000000000001", maxAttendees: 50 },
+    { title: "Math Seminar", startTime: "2024-12-05T14:00:00Z", location: "Building B", groupId: "00000000-0000-0000-0000-000000000002", maxAttendees: 30 },
+    { title: "Quantum Talk", startTime: "2024-12-10T16:00:00Z", location: "Lab 1", groupId: "00000000-0000-0000-0000-000000000003", maxAttendees: 20 }
+  ])
+}

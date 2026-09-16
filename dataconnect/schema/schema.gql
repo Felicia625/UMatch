@@ -1,0 +1,42 @@
+type User @table {
+  email: String!
+  fullName: String!
+  major: String!
+  bio: String
+  avatarUrl: String
+  graduationYear: Int
+}
+
+type Course @table {
+  courseCode: String!
+  courseTitle: String!
+  department: String
+}
+
+type Enrollment @table(key: ["user", "course"]) {
+  user: User!
+  course: Course!
+}
+
+type Group @table {
+  name: String!
+  description: String!
+  category: String!
+  imageUrl: String
+  isPrivate: Boolean
+}
+
+type UserGroup @table(key: ["user", "group"]) {
+  user: User!
+  group: Group!
+  role: String!
+}
+
+type Event @table {
+  title: String!
+  startTime: Timestamp!
+  location: String!
+  group: Group!
+  description: String
+  maxAttendees: Int
+}

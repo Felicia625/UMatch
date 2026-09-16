@@ -1,97 +1,162 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# UMatch
 
-# Getting Started
+UMatch is an Expo React Native application backed by Firebase services.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Stack
 
-## Step 1: Start Metro
+- Expo SDK 57
+- React Native 0.86
+- React 19
+- Firebase Authentication and client SDKs
+- Cloud Firestore
+- Firebase Data Connect
+- Firebase Cloud Functions
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## Prerequisites
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+Install the following before starting:
 
-```sh
-# Using npm
+- Node.js 22.13 or newer
+- npm
+- Git
+- Expo Go on a physical device, or an Android/iOS emulator
+- Firebase CLI for backend development and deployment
+
+Install the Firebase CLI if it is not already available:
+
+```bash
+npm install -g firebase-tools
+firebase login
+```
+
+Expo SDK 57 targets Android 7+ and iOS 16.4+.
+
+## Setup from GitHub
+
+Clone the repository and enter the project directory:
+
+```bash
+git clone https://github.com/Felicia625/UMatch.git
+cd UMatch
+```
+
+Install the app dependencies:
+
+```bash
+npm install
+```
+
+Install the Firebase CLI and sign in:
+
+```bash
+npm install -g firebase-tools
+firebase login
+```
+
+Start the Expo development server:
+
+```bash
 npm start
-
-# OR using Yarn
-yarn start
 ```
 
-## Step 2: Build and run your app
+Then use the Expo terminal menu to open the app on a device or emulator. The available npm scripts are:
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+```bash
 npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
 npm run ios
-
-# OR using Yarn
-yarn ios
+npm run web
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+For a physical device, make sure the computer and device are on the same network. Expo Go must support the project's Expo SDK version.
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## Firebase setup
 
-## Step 3: Modify your app
+The app is configured for the Firebase project `umatch-cc8cc`. If Firebase has not been initialized in your local checkout, run this from the repository root:
 
-Now that you have successfully run the app, let's make changes!
+```bash
+firebase init
+```
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+Select the existing project `umatch-cc8cc` and configure the services used by this repository:
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+- Firestore
+- Functions
+- Data Connect
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+Keep the existing repository files when Firebase asks whether to overwrite them. The relevant configuration is already present in `firebaseConfig.js`, `firestore.rules`, `firestore.indexes.json`, `functions/`, and `dataconnect/`.
 
-## Congratulations! :tada:
+### Firestore
 
-You've successfully run and modified your React Native App. :partying_face:
+Deploy Firestore rules and indexes with:
 
-### Now what?
+```bash
+firebase deploy --only firestore:rules,firestore:indexes
+```
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+The current rules are temporary development rules and allow unrestricted reads and writes until **October 16, 2026**. Replace them with authenticated, least-privilege rules before using the app with real user data.
 
-# Troubleshooting
+### Cloud Functions
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+Install the Functions dependencies:
 
-# Learn More
+```bash
+cd functions
+npm install
+cd ..
+```
 
-To learn more about React Native, take a look at the following resources:
+Run the Functions emulator:
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+```bash
+cd functions
+npm run serve
+```
+
+Deploy Functions from the repository root or the `functions` directory:
+
+```bash
+firebase deploy --only functions
+```
+
+### Firebase Data Connect
+
+The Data Connect service is defined in `dataconnect/dataconnect.yaml` and uses the `umatch` service in `asia-southeast2`.
+
+Use the Firebase CLI to deploy Data Connect after configuring the required Cloud SQL/Data Connect access:
+
+```bash
+firebase deploy --only dataconnect
+```
+
+Generated client code is stored in `src/dataconnect-generated/`. Regenerate it using the Firebase Data Connect workflow whenever the schema or connector queries change.
+
+## Useful commands
+
+| Command | Purpose |
+| --- | --- |
+| `npm start` | Start the Expo development server |
+| `npm run android` | Start Expo and open Android |
+| `npm run ios` | Start Expo and open iOS |
+| `npm run web` | Start the web version |
+| `firebase emulators:start` | Start configured Firebase emulators |
+| `firebase deploy` | Deploy configured Firebase services |
+
+## Project structure
+
+```text
+app/                    Expo Router screens and routes
+assets/                 App icons and other static assets
+dataconnect/            Data Connect schema, connectors, and seed data
+functions/              Firebase Cloud Functions
+src/dataconnect-generated/Generated Data Connect client code
+firebaseConfig.js       Firebase client configuration
+firestore.rules         Firestore security rules
+firestore.indexes.json  Firestore indexes
+app.json                Expo application configuration
+```
+
+## Troubleshooting
+
+- If Expo reports a version mismatch, run `npx expo install --fix` and confirm that the installed packages match Expo SDK 57.
+- If the app cannot connect to Firebase, verify that you are using the expected Firebase project and that the required services are enabled in the Firebase console.
+- If an emulator command fails, confirm that you are logged in with `firebase login` and that the Firebase CLI is using the correct project.
