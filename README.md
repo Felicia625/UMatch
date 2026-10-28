@@ -24,3 +24,10 @@ Test path for auth: Sign Up with an `@student.umn.ac.id` address, verify the ema
 - `src/services/` all Firebase access lives here (swap these files when you move to your own backend)
 - `src/types/` data model for users, swipes, matches, messages
 - `src/components/ui.tsx` shared Button / TextField / OptionPicker
+
+
+## Test Account
+If you change your password please update the readme to match your current password so other people can also test it
+1. email: vanessa.audrelia@student.umn.ac.id | pass: vanes123
+2. email: hafizh.dikara@student.umn.ac.id | pass: bintang123
+3. email: eufrat.algaws@student.umn.ac.id | pass: eufrat123
