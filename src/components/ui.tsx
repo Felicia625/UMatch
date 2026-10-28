@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,13 +14,24 @@ import {
   TextInputProps,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Edge, SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../constants/theme';
 
-export function Screen({ children, scroll = true }: { children: React.ReactNode; scroll?: boolean }) {
+// Screens under the app title bar: the bar already covers the top inset.
+export const HEADER_EDGES: readonly Edge[] = ['bottom', 'left', 'right'];
+
+export function Screen({
+  children,
+  scroll = true,
+  edges,
+}: {
+  children: React.ReactNode;
+  scroll?: boolean;
+  edges?: readonly Edge[];
+}) {
   const t = useTheme();
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
+    <SafeAreaView edges={edges} style={{ flex: 1, backgroundColor: t.background }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         {scroll ? (
           <ScrollView contentContainerStyle={{ padding: 24 }} keyboardShouldPersistTaps="handled">
@@ -78,6 +90,32 @@ export function TextField(props: TextInputProps) {
       {...props}
       style={[styles.field, { borderColor: t.outline, backgroundColor: t.surface, color: t.text }, props.style]}
     />
+  );
+}
+
+/** Password input with the usual eye button to show or hide what you typed. */
+export function PasswordField(props: TextInputProps) {
+  const t = useTheme();
+  const [visible, setVisible] = useState(false);
+  return (
+    <View>
+      <TextField
+        {...props}
+        secureTextEntry={!visible}
+        autoCapitalize="none"
+        autoCorrect={false}
+        style={[{ paddingRight: 52 }, props.style]}
+      />
+      <Pressable
+        onPress={() => setVisible((v) => !v)}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={visible ? 'Hide password' : 'Show password'}
+        style={styles.eye}
+      >
+        <Ionicons name={visible ? 'eye-off-outline' : 'eye-outline'} size={22} color={t.textSecondary} />
+      </Pressable>
+    </View>
   );
 }
 
@@ -147,6 +185,7 @@ export function Placeholder({ title, note }: { title: string; note: string }) {
 
 const styles = StyleSheet.create({
   button: { height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+  eye: { position: 'absolute', right: 0, top: 0, width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
   field: { height: 52, borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, fontSize: 16, marginBottom: 12 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 32 },
   sheet: { borderRadius: 16, maxHeight: '70%', paddingVertical: 8 },

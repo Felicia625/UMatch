@@ -1,4 +1,4 @@
-import { useColorScheme } from 'react-native';
+import { createContext, useContext } from 'react';
 
 // Values ported from res/values/colors.xml and res/values-night/colors.xml
 export const palette = {
@@ -32,7 +32,19 @@ export const palette = {
 
 export type Theme = typeof palette.light;
 
-// Follows the system setting for now. The in-app dark mode switch comes with the Settings screen.
-export function useTheme(): Theme {
-  return useColorScheme() === 'dark' ? palette.dark : palette.light;
+export interface ThemeState {
+  theme: Theme;
+  darkMode: boolean;
+  setDarkMode: (value: boolean) => void;
+  ready: boolean; // the saved choice has been read from storage
 }
+
+export const ThemeContext = createContext<ThemeState>({
+  theme: palette.light,
+  darkMode: false,
+  setDarkMode: () => {},
+  ready: true,
+});
+
+export const useTheme = () => useContext(ThemeContext).theme;
+export const useThemeSettings = () => useContext(ThemeContext);

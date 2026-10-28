@@ -1,8 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from '../../src/components/Avatar';
 import { TextField } from '../../src/components/ui';
 import { useTheme } from '../../src/constants/theme';
@@ -29,6 +28,18 @@ export default function Matches() {
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+
+  // The favourites toggle lives in the title bar.
+  const navigation = useNavigation();
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable onPress={() => setFavoritesOnly((v) => !v)} hitSlop={10} accessibilityLabel="Show favorites">
+          <Ionicons name={favoritesOnly ? 'star' : 'star-outline'} size={24} color={favoritesOnly ? '#FFE082' : '#FFFFFF'} />
+        </Pressable>
+      ),
+    });
+  }, [navigation, favoritesOnly]);
 
   // A like-back or a new match can change who is "active", so re-read the lookups whenever the tab is shown.
   useFocusEffect(
@@ -95,15 +106,8 @@ export default function Matches() {
   }
 
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: t.background }}>
-      <View style={styles.header}>
-        <Text style={{ color: t.text, fontSize: 24, fontWeight: '800' }}>Matches</Text>
-        <Pressable onPress={() => setFavoritesOnly((v) => !v)} hitSlop={10} accessibilityLabel="Show favorites">
-          <Ionicons name={favoritesOnly ? 'star' : 'star-outline'} size={26} color={favoritesOnly ? '#F5B301' : t.text} />
-        </Pressable>
-      </View>
-
-      <View style={{ paddingHorizontal: 16 }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
         <TextField placeholder="Search matches" value={search} onChangeText={setSearch} />
       </View>
 
@@ -137,7 +141,7 @@ export default function Matches() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={{ color: t.textSecondary }}>
-                {favoritesOnly ? 'No favorites yet.' : tab === 'active' ? 'No matches yet. Keep swiping!' : 'Nothing here.'}
+                {rows?.length === 0 ? 'No match yet' : favoritesOnly ? 'No favorites yet.' : tab === 'active' ? 'No match yet' : 'Nothing here.'}
               </Text>
             </View>
           }
@@ -169,7 +173,7 @@ export default function Matches() {
           )}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

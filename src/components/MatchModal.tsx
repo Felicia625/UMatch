@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { Modal, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../constants/theme';
+import { PersonPlaceholder } from './Avatar';
 import { UserProfile } from '../types';
 import { Button } from './ui';
 
@@ -23,7 +24,7 @@ export function MatchModal({
           {user?.photoUrl ? (
             <Image source={{ uri: user.photoUrl }} style={styles.photo} contentFit="cover" />
           ) : (
-            <View style={[styles.photo, { backgroundColor: t.surfaceVariant }]} />
+            <PersonPlaceholder style={styles.photo} iconSize={88} />
           )}
           <View style={{ alignSelf: 'stretch', marginTop: 16 }}>
             <Button title="Start chatting" onPress={onChat} />

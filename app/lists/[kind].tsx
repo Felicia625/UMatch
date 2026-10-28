@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../src/components/ui';
+import { PersonPlaceholder } from '../../src/components/Avatar';
 import { useTheme } from '../../src/constants/theme';
 import { useAuth } from '../../src/providers/AuthProvider';
 import {
@@ -14,7 +15,6 @@ import {
   unpassUser,
 } from '../../src/services/likes';
 import { UserProfile } from '../../src/types';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Kind = 'liked-me' | 'my-likes' | 'passed';
 
@@ -106,13 +106,8 @@ export default function UserList() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} accessibilityRole="button" hitSlop={12}>
-          <Text style={{ color: t.text, fontSize: 24 }}>←</Text>
-        </Pressable>
-        <Text style={{ color: t.text, fontSize: 22, fontWeight: '800' }}>{cfg.title}</Text>
-      </View>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <Stack.Screen options={{ title: cfg.title }} />
 
       {status === 'loading' && <ActivityIndicator color={t.primary} size="large" style={{ marginTop: 48 }} />}
       {status === 'error' && (
@@ -139,7 +134,7 @@ export default function UserList() {
                 {item.photoUrl ? (
                   <Image source={{ uri: item.photoUrl }} style={styles.photo} contentFit="cover" />
                 ) : (
-                  <View style={[styles.photo, { backgroundColor: t.surfaceVariant }]} />
+                  <PersonPlaceholder style={styles.photo} iconSize={80} />
                 )}
                 <Text style={{ color: t.text, fontWeight: '700', padding: 8 }} numberOfLines={1}>
                   {item.name}
@@ -153,12 +148,11 @@ export default function UserList() {
           )}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 20, paddingVertical: 12 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   card: { flex: 1, borderRadius: 16, overflow: 'hidden', marginBottom: 12 },
   photo: { width: '100%', aspectRatio: 1 },

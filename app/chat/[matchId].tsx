@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
@@ -121,18 +121,19 @@ export default function Chat() {
     : [];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
-      <View style={[styles.header, { borderColor: t.outline }]}>
-        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityLabel="Back">
-          <Text style={{ color: t.text, fontSize: 24 }}>←</Text>
-        </Pressable>
-        <Pressable onPress={() => partnerId && router.push(`/profile/${partnerId}`)} style={styles.headerPartner}>
-          <Avatar uri={partner?.photoUrl} name={partner?.name} size={40} />
-          <Text style={{ color: t.text, fontSize: 18, fontWeight: '700' }} numberOfLines={1}>
-            {partner?.name ?? ' '}
-          </Text>
-        </Pressable>
-      </View>
+    <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: t.background }}>
+      <Stack.Screen
+        options={{
+          headerTitle: () => (
+            <Pressable onPress={() => partnerId && router.push(`/profile/${partnerId}`)} style={styles.headerPartner}>
+              <Avatar uri={partner?.photoUrl} name={partner?.name} size={34} />
+              <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>
+                {partner?.name ?? ' '}
+              </Text>
+            </Pressable>
+          ),
+        }}
+      />
 
       {pinned.length > 0 && (
         <View style={[styles.pinnedBar, { backgroundColor: t.surfaceVariant, borderColor: t.outline }]}>
@@ -243,8 +244,7 @@ function Bubble({ message, mine, onLongPress }: { message: Message; mine: boolea
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
-  headerPartner: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  headerPartner: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   pinnedBar: { maxHeight: 110, paddingHorizontal: 16, paddingVertical: 6, borderBottomWidth: StyleSheet.hairlineWidth },
   bubble: { maxWidth: '80%', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 8 },
   quote: { borderLeftWidth: 3, paddingLeft: 8, marginBottom: 6 },

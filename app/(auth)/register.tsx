@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Button, OptionPicker, Screen, TextField } from '../../src/components/ui';
+import { Button, OptionPicker, PasswordField, Screen, TextField } from '../../src/components/ui';
 import { GENDERS, MAJORS, SCHOOL_YEARS } from '../../src/constants/options';
 import { useTheme } from '../../src/constants/theme';
 import { friendlyAuthError, register } from '../../src/services/auth';
@@ -44,7 +44,7 @@ export default function Register() {
       <Text style={[styles.subtitle, { color: t.textSecondary }]}>Join UMN Dating today</Text>
 
       <TextField placeholder="Username" value={form.username} onChangeText={set('username')} autoCapitalize="none" />
-      <TextField placeholder="Password" value={form.password} onChangeText={set('password')} secureTextEntry autoCapitalize="none" />
+      <PasswordField placeholder="Password" value={form.password} onChangeText={set('password')} />
       <TextField placeholder="Full Name" value={form.name} onChangeText={set('name')} />
       <TextField placeholder="Email" value={form.email} onChangeText={set('email')} autoCapitalize="none" keyboardType="email-address" />
       <TextField placeholder="Age" value={form.age} onChangeText={set('age')} keyboardType="number-pad" />

@@ -2,10 +2,10 @@ import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { FormModal } from '../../src/components/FormModal';
 import { Button } from '../../src/components/ui';
 import { GENDERS, MAJORS } from '../../src/constants/options';
+import { PersonPlaceholder } from '../../src/components/Avatar';
 import { useTheme } from '../../src/constants/theme';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { deleteAccount } from '../../src/services/account';
@@ -76,13 +76,13 @@ export default function Profile() {
   const prefMajors = profile?.preference.majorPreferences.map((c) => MAJORS.find((m) => m.code === c)?.label ?? c);
 
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: t.background }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         <View style={{ alignItems: 'center' }}>
           {profile?.photoUrl ? (
             <Image source={{ uri: profile.photoUrl }} style={styles.photo} contentFit="cover" />
           ) : (
-            <View style={[styles.photo, { backgroundColor: t.surfaceVariant }]} />
+            <PersonPlaceholder style={styles.photo} iconSize={76} />
           )}
           <Text style={{ color: t.text, fontSize: 24, fontWeight: '800', marginTop: 12 }}>
             {profile?.name ?? '...'}
@@ -138,7 +138,7 @@ export default function Profile() {
         onSubmit={onDelete}
         onClose={() => setDeleteOpen(false)}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -163,6 +163,7 @@ function Row({ label, value }: { label: string; value?: string }) {
 }
 
 const styles = StyleSheet.create({
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   photo: { width: 140, height: 140, borderRadius: 70 },
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
 });

@@ -3,8 +3,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Button, OptionPicker, Screen, TextField } from '../../src/components/ui';
+import { Button, HEADER_EDGES, OptionPicker, Screen, TextField } from '../../src/components/ui';
 import { GENDERS, MAJORS, MIN_AGE, SCHOOL_YEARS, YEAR_PREFERENCES } from '../../src/constants/options';
+import { PersonPlaceholder } from '../../src/components/Avatar';
 import { useTheme } from '../../src/constants/theme';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { friendlyAuthError } from '../../src/services/auth';
@@ -128,12 +129,7 @@ export default function EditProfile() {
   const remainingMajors = majorOptions.filter((m) => !prefMajors.includes(m.value as MajorCode));
 
   return (
-    <Screen>
-      <Pressable onPress={() => router.back()} accessibilityRole="button" hitSlop={12}>
-        <Text style={{ color: t.text, fontSize: 24 }}>←</Text>
-      </Pressable>
-      <Text style={[styles.title, { color: t.text }]}>Edit Profile</Text>
-
+    <Screen edges={HEADER_EDGES}>
       {!loaded ? (
         <ActivityIndicator color={t.primary} style={{ marginTop: 32 }} />
       ) : (
@@ -142,7 +138,7 @@ export default function EditProfile() {
             {shownPhoto ? (
               <Image source={{ uri: shownPhoto }} style={styles.photo} contentFit="cover" />
             ) : (
-              <View style={[styles.photo, { backgroundColor: t.surfaceVariant }]} />
+              <PersonPlaceholder style={styles.photo} iconSize={76} />
             )}
             <Text style={{ color: t.primary, fontWeight: '600', marginTop: 8 }}>Change photo</Text>
           </Pressable>
@@ -189,7 +185,6 @@ export default function EditProfile() {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 26, fontWeight: '800', marginVertical: 12 },
   photo: { width: 140, height: 140, borderRadius: 70 },
   section: { fontWeight: '700', marginTop: 12, marginBottom: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },

@@ -63,7 +63,9 @@ export function useMatches(myId: string | undefined) {
   }, [matches, myId]);
 
   const rows = useMemo<MatchRow[] | null>(() => {
-    if (!myId || !matches || !meta) return null;
+    if (!myId || !matches) return null;
+    if (matches.length === 0) return []; // nothing to sort, so the "No match yet" message can show right away
+    if (!meta) return null;
     return matches
       .flatMap((match) => {
         const pid = partnerOf(match, myId);

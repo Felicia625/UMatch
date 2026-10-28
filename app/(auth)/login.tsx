@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Button, Screen, TextField } from '../../src/components/ui';
+import { Button, PasswordField, Screen, TextField } from '../../src/components/ui';
 import { useTheme } from '../../src/constants/theme';
 import {
   friendlyAuthError,
@@ -61,7 +61,7 @@ export default function Login() {
       <Text style={[styles.subtitle, { color: t.textSecondary }]}>Sign in to continue</Text>
 
       <TextField placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
-      <TextField placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" />
+      <PasswordField placeholder="Password" value={password} onChangeText={setPassword} />
 
       <Pressable onPress={() => { setResetEmail(email); setForgotOpen(true); }}>
         <Text style={[styles.link, { color: t.primary }]}>Forgot Password?</Text>

@@ -10,6 +10,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { FILL } from '../constants/layout';
 import { SwipeDirection } from '../services/swipes';
 import { UserProfile } from '../types';
 import { UserCard } from './UserCard';
@@ -139,7 +140,7 @@ export const UserSwipeDeck = forwardRef<SwipeDeckHandle, Props>(function UserSwi
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  card: { ...StyleSheet.absoluteFillObject },
+  card: { ...FILL },
   badge: { position: 'absolute', top: 32, borderWidth: 4, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 4 },
   likeBadge: { left: 24, borderColor: '#2E7D32', transform: [{ rotate: '-15deg' }] },
   nopeBadge: { right: 24, borderColor: '#D32F2F', transform: [{ rotate: '15deg' }] },

@@ -59,14 +59,30 @@ export async function loadCandidates(me: UserProfile, filters: CandidateFilters 
   if (/^\d{4}$/.test(yearPref)) constraints.push(where('schoolyear', '==', yearPref));
 
   const snap = await getDocs(query(collection(db, 'users'), ...constraints, limit(CANDIDATE_LIMIT)));
-  const candidates = snap.docs
-    .map((d) => toUserProfile(d.id, d.data()))
-    .filter(
-      (u) =>
-        !excluded.has(u.uid) &&
-        matchesYearPreference(yearPref, me.schoolyear, u.schoolyear) &&
-        (majors.length === 0 || (!!u.major && majors.includes(u.major))),
-    );
+  const all = snap.docs.map((d) => toUserProfile(d.id, d.data()));
+  const notSwiped = all.filter((u) => !excluded.has(u.uid));
+  const yearOk = notSwiped.filter((u) => matchesYearPreference(yearPref, me.schoolyear, u.schoolyear));
+  const candidates = yearOk.filter((u) => majors.length === 0 || (!!u.major && majors.includes(u.major)));
+
+  if (__DEV__) {
+    // Shows in the Metro terminal: where the profiles get filtered out.
+    console.log('[discover]', {
+      lookingForGender: me.preference.gender,
+      yearPref,
+      majors,
+      fromFirestore: all.length,
+      afterSwipedAndBlocked: notSwiped.length,
+      afterYear: yearOk.length,
+      shown: candidates.length,
+    });
+    if (all.length === 0) {
+      const sample = await getDocs(query(collection(db, 'users'), limit(20)));
+      console.log(
+        `[discover] no users have gender == "${me.preference.gender}". gender values found in users:`,
+        sample.docs.map((d) => `${d.id.slice(0, 6)}: ${JSON.stringify(d.data().gender)}`),
+      );
+    }
+  }
   return shuffle(candidates);
 }
 

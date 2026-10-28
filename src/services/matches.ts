@@ -57,20 +57,30 @@ const list = (v: unknown): string[] => (Array.isArray(v) ? (v as string[]) : [])
  * Everything needed to sort matches into Active / Inactive / Blocked and mark favourites. MatchListFragment read two
  * swipes documents per match; these five reads cover all matches at once.
  */
+// Names the read that failed, so a Firestore "permission-denied" points at the rule that is missing.
+const read = <T>(label: string, promise: Promise<T>): Promise<T> =>
+  promise.catch((e) => {
+    console.warn(`Firestore read failed: ${label}`, e);
+    throw e;
+  });
+
 export async function loadMatchMeta(myId: string): Promise<MatchMeta> {
   const [mine, likedMe, myBlocks, blockedMe, favs] = await Promise.all([
-    getDoc(doc(db, 'swipes', myId)),
-    getDocs(query(collection(db, 'swipes'), where('liked', 'array-contains', myId))),
-    getDoc(doc(db, 'blocks', myId)),
-    getDocs(query(collection(db, 'blocks'), where('blockedUsers', 'array-contains', myId))),
-    getDoc(doc(db, 'favorites', myId)),
+    read('swipes/me', getDoc(doc(db, 'swipes', myId))),
+    read('swipes where liked contains me', getDocs(query(collection(db, 'swipes'), where('liked', 'array-contains', myId)))),
+    read('blocks/me', getDoc(doc(db, 'blocks', myId))),
+    read('blocks where blockedUsers contains me', getDocs(query(collection(db, 'blocks'), where('blockedUsers', 'array-contains', myId)))),
+    getDoc(doc(db, 'favorites', myId)).catch((e) => {
+      console.warn('Cannot read favorites (check the favorites rule in Firestore)', e);
+      return null;
+    }),
   ]);
   return {
     iLiked: new Set(list(mine.data()?.liked)),
     likedMe: new Set(likedMe.docs.map((d) => d.id)),
     iBlocked: new Set(list(myBlocks.data()?.blockedUsers)),
     blockedMe: new Set(blockedMe.docs.map((d) => d.id)),
-    favorites: new Set(list(favs.data()?.favoriteUsers)),
+    favorites: new Set(list(favs?.data()?.favoriteUsers)),
   };
 }
 

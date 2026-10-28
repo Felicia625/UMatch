@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../constants/theme';
-import { Button, TextField } from './ui';
+import { Button, PasswordField, TextField } from './ui';
 
 export interface FormField {
   key: string;
@@ -52,16 +52,18 @@ export function FormModal({
         <View style={[styles.dialog, { backgroundColor: t.surface }]}>
           <Text style={[styles.title, { color: t.text }]}>{title}</Text>
           {!!message && <Text style={{ color: t.textSecondary, marginBottom: 12 }}>{message}</Text>}
-          {fields.map((f) => (
-            <TextField
-              key={f.key}
-              placeholder={f.placeholder}
-              secureTextEntry={f.secure}
-              autoCapitalize="none"
-              value={values[f.key] ?? ''}
-              onChangeText={(v) => setValues((s) => ({ ...s, [f.key]: v }))}
-            />
-          ))}
+          {fields.map((f) => {
+            const Field = f.secure ? PasswordField : TextField; // password fields get the show/hide eye button
+            return (
+              <Field
+                key={f.key}
+                placeholder={f.placeholder}
+                autoCapitalize="none"
+                value={values[f.key] ?? ''}
+                onChangeText={(v) => setValues((s) => ({ ...s, [f.key]: v }))}
+              />
+            );
+          })}
           <Button title={submitLabel} variant={destructive ? 'danger' : 'primary'} loading={busy} onPress={submit} />
           <Button title="Cancel" variant="ghost" onPress={onClose} disabled={busy} />
         </View>

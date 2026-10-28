@@ -1,9 +1,10 @@
 import { Image } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Screen } from '../../src/components/ui';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { HEADER_EDGES, Screen } from '../../src/components/ui';
 import { MAJORS } from '../../src/constants/options';
+import { PersonPlaceholder } from '../../src/components/Avatar';
 import { useTheme } from '../../src/constants/theme';
 import { getUser } from '../../src/services/users';
 import { UserProfile } from '../../src/types';
@@ -11,7 +12,6 @@ import { UserProfile } from '../../src/types';
 // Port of ProfileViewFragment (read-only view of someone else's profile).
 export default function ProfileView() {
   const t = useTheme();
-  const router = useRouter();
   const { uid } = useLocalSearchParams<{ uid: string }>();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading');
@@ -34,10 +34,7 @@ export default function ProfileView() {
   ];
 
   return (
-    <Screen>
-      <Pressable onPress={() => router.back()} accessibilityRole="button" hitSlop={12}>
-        <Text style={{ color: t.text, fontSize: 24 }}>←</Text>
-      </Pressable>
+    <Screen edges={HEADER_EDGES}>
       {state === 'loading' && <ActivityIndicator color={t.primary} style={{ marginTop: 48 }} />}
       {state === 'missing' && <Text style={{ color: t.text, marginTop: 24 }}>User not found.</Text>}
       {state === 'ready' && profile && (
@@ -45,7 +42,7 @@ export default function ProfileView() {
           {profile.photoUrl ? (
             <Image source={{ uri: profile.photoUrl }} style={styles.photo} contentFit="cover" />
           ) : (
-            <View style={[styles.photo, { backgroundColor: t.surfaceVariant }]} />
+            <PersonPlaceholder style={styles.photo} iconSize={120} />
           )}
           <Text style={{ color: t.text, fontSize: 24, fontWeight: '800', marginTop: 16 }}>
             {profile.username}
