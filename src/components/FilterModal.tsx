@@ -1,13 +1,11 @@
-import { useState } from 'react';
-import { Modal, StyleSheet, Text, View } from 'react-native';
-import { MAJORS, SCHOOL_YEARS } from '../constants/options';
+import { useEffect, useState } from 'react';
+import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../constants/theme';
-import { CandidateFilters } from '../services/swipes';
-import { MajorCode } from '../types';
-import { Button, OptionPicker } from './ui';
+import { Preferences } from '../types';
+import { PreferenceFields } from './PreferenceFields';
+import { Button } from './ui';
 
-const ALL = 'all';
-
+/** The Discover filter IS the "I'm looking for" setting: it opens with the saved preferences and Apply saves them. */
 export function FilterModal({
   visible,
   value,
@@ -15,49 +13,33 @@ export function FilterModal({
   onClose,
 }: {
   visible: boolean;
-  value: CandidateFilters;
-  onApply: (filters: CandidateFilters) => void;
+  value: Preferences;
+  onApply: (preferences: Preferences) => void;
   onClose: () => void;
 }) {
   const t = useTheme();
-  const [major, setMajor] = useState(value.major ?? ALL);
-  const [year, setYear] = useState(value.year ?? ALL);
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    if (visible) setDraft(value);
+  }, [visible, value]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={[styles.dialog, { backgroundColor: t.surface }]}>
-          <Text style={[styles.title, { color: t.text }]}>Filter</Text>
-          <Text style={{ color: t.textSecondary, marginBottom: 12 }}>These override your saved preferences until cleared.</Text>
-          <OptionPicker
-            label="Major"
-            value={major}
-            onChange={setMajor}
-            options={[{ value: ALL, label: 'All majors' }, ...MAJORS.map((m) => ({ value: m.code, label: m.label }))]}
-          />
-          <OptionPicker
-            label="School year"
-            value={year}
-            onChange={setYear}
-            options={[{ value: ALL, label: 'All years' }, ...SCHOOL_YEARS.map((y) => ({ value: y, label: y }))]}
-          />
+          <Text style={[styles.title, { color: t.text }]}>I'm looking for</Text>
+          <Text style={{ color: t.textSecondary, marginBottom: 12 }}>
+            Same settings as Edit Profile. They are saved when you apply.
+          </Text>
+          <ScrollView style={{ flexGrow: 0 }} keyboardShouldPersistTaps="handled">
+            <PreferenceFields value={draft} onChange={setDraft} />
+          </ScrollView>
+          <Button title="Apply" onPress={() => onApply(draft)} />
           <Button
-            title="Apply"
-            onPress={() =>
-              onApply({
-                major: major === ALL ? undefined : (major as MajorCode),
-                year: year === ALL ? undefined : year,
-              })
-            }
-          />
-          <Button
-            title="Clear filters"
+            title="Reset batch and majors"
             variant="outline"
-            onPress={() => {
-              setMajor(ALL);
-              setYear(ALL);
-              onApply({});
-            }}
+            onPress={() => setDraft((d) => ({ ...d, yearPreferences: 'All', majorPreferences: [] }))}
           />
           <Button title="Cancel" variant="ghost" onPress={onClose} />
         </View>
@@ -68,6 +50,6 @@ export function FilterModal({
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
-  dialog: { borderRadius: 16, padding: 20 },
+  dialog: { borderRadius: 16, padding: 20, maxHeight: '90%' },
   title: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
 });

@@ -12,17 +12,11 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { MajorCode, UserProfile } from '../types';
-import { matchesYearPreference } from '../utils/preferences';
+import { UserProfile } from '../types';
+import { matchesYearPreference, oppositeGender } from '../utils/preferences';
 import { toUserProfile } from './users';
 
 export type SwipeDirection = 'left' | 'right';
-
-/** Optional overrides from the filter dialog; they win over the saved preferences. */
-export interface CandidateFilters {
-  year?: string;
-  major?: MajorCode;
-}
 
 const CANDIDATE_LIMIT = 100;
 
@@ -40,7 +34,7 @@ function shuffle<T>(items: T[]): T[] {
  * if one is set) instead of downloading every user, then filters relative year / major / already-swiped / blocked on
  * the device. Known limit: it looks at the first 100 matches. Paging comes with the own-backend move.
  */
-export async function loadCandidates(me: UserProfile, filters: CandidateFilters = {}): Promise<UserProfile[]> {
+export async function loadCandidates(me: UserProfile): Promise<UserProfile[]> {
   const [swipeSnap, blockSnap] = await Promise.all([
     getDoc(doc(db, 'swipes', me.uid)),
     getDoc(doc(db, 'blocks', me.uid)),
@@ -52,10 +46,11 @@ export async function loadCandidates(me: UserProfile, filters: CandidateFilters 
     ...((blockSnap.data()?.blockedUsers as string[] | undefined) ?? []),
   ]);
 
-  const yearPref = filters.year ?? me.preference.yearPreferences;
-  const majors = filters.major ? [filters.major] : me.preference.majorPreferences;
+  // The Discover filter edits these saved preferences, so there is a single source of truth.
+  const yearPref = me.preference.yearPreferences;
+  const majors = me.preference.majorPreferences;
 
-  const constraints: QueryConstraint[] = [where('gender', '==', me.preference.gender)];
+  const constraints: QueryConstraint[] = [where('gender', '==', oppositeGender(me.gender))];
   if (/^\d{4}$/.test(yearPref)) constraints.push(where('schoolyear', '==', yearPref));
 
   const snap = await getDocs(query(collection(db, 'users'), ...constraints, limit(CANDIDATE_LIMIT)));

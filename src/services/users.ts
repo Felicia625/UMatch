@@ -14,6 +14,8 @@ import {
 import { db } from '../config/firebase';
 import { MAJORS } from '../constants/options';
 import { Gender, MajorCode, RegistrationInput, UserProfile } from '../types';
+import { ageFromBirthDate } from '../utils/age';
+import { oppositeGender } from '../utils/preferences';
 
 // The existing Firestore data is a little inconsistent (age is a string, gender sometimes 'Male', majors sometimes
 // display names). These helpers accept both old and new shapes so existing users keep working.
@@ -37,13 +39,16 @@ const toYearPref = (v: unknown): string => {
 export function toUserProfile(uid: string, d: DocumentData): UserProfile {
   const gender = toGender(d.gender) ?? 'M';
   const pref = d.preference ?? {};
+  const birthDate = typeof d.birthDate === 'string' ? d.birthDate : undefined;
   // Deliberately never reads `password` or `fcmToken` into the profile object.
   return {
     uid,
     username: d.username ?? '',
     name: d.name ?? '',
     email: d.email ?? '',
-    age: Number(d.age) || 0,
+    birthDate,
+    // Age comes from the birth date, so it increases by itself each birthday. Old accounts that only stored an age keep it.
+    age: (birthDate ? ageFromBirthDate(birthDate) : null) ?? (Number(d.age) || 0),
     gender,
     major: toMajor(d.major),
     schoolyear: String(d.schoolyear ?? ''),
@@ -54,7 +59,7 @@ export function toUserProfile(uid: string, d: DocumentData): UserProfile {
     photoVerified: d.photoVerified === true,
     interests: Array.isArray(d.interests) ? d.interests : [],
     preference: {
-      gender: toGender(pref.gender) ?? (gender === 'M' ? 'F' : 'M'),
+      gender: oppositeGender(gender), // always the opposite gender, whatever an older document says
       yearPreferences: toYearPref(pref.yearPreferences),
       majorPreferences: (Array.isArray(pref.majorPreferences) ? pref.majorPreferences : [])
         .map(toMajor)
@@ -84,7 +89,7 @@ export async function createUserDocument(uid: string, input: RegistrationInput):
     username: input.username,
     name: input.name,
     email: input.email,
-    age: input.age,
+    birthDate: input.birthDate,
     gender: input.gender,
     major: input.major,
     schoolyear: input.schoolyear,
@@ -96,7 +101,7 @@ export async function createUserDocument(uid: string, input: RegistrationInput):
     interests: [],
     // Default preference = opposite gender, same as the Android app
     preference: {
-      gender: input.gender === 'M' ? 'F' : 'M',
+      gender: oppositeGender(input.gender),
       yearPreferences: 'All',
       majorPreferences: [],
     },

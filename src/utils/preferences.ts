@@ -1,4 +1,8 @@
 import { YEAR_PREFERENCES } from '../constants/options';
+import { Gender } from '../types';
+
+/** The app only shows people of the opposite gender, so this is derived instead of being a setting. */
+export const oppositeGender = (g: Gender): Gender => (g === 'M' ? 'F' : 'M');
 
 export function yearPreferenceLabel(pref: string): string {
   return YEAR_PREFERENCES.find((p) => p.value === pref)?.label ?? pref;

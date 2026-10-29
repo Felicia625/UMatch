@@ -2,13 +2,14 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button, OptionPicker, PasswordField, Screen, TextField } from '../../src/components/ui';
-import { GENDERS, MAJORS, SCHOOL_YEARS } from '../../src/constants/options';
+import { GENDERS, MAJORS, schoolYearOptions } from '../../src/constants/options';
+import { BirthDateField } from '../../src/components/BirthDateField';
 import { useTheme } from '../../src/constants/theme';
 import { friendlyAuthError, register } from '../../src/services/auth';
 import { RegistrationForm, validateRegistration } from '../../src/utils/validation';
 
 const emptyForm: RegistrationForm = {
-  username: '', password: '', name: '', email: '', age: '', gender: '', schoolyear: '', major: '',
+  username: '', password: '', name: '', email: '', birthDate: '', gender: '', schoolyear: '', major: '',
 };
 
 export default function Register() {
@@ -47,9 +48,9 @@ export default function Register() {
       <PasswordField placeholder="Password" value={form.password} onChangeText={set('password')} />
       <TextField placeholder="Full Name" value={form.name} onChangeText={set('name')} />
       <TextField placeholder="Email" value={form.email} onChangeText={set('email')} autoCapitalize="none" keyboardType="email-address" />
-      <TextField placeholder="Age" value={form.age} onChangeText={set('age')} keyboardType="number-pad" />
+      <BirthDateField value={form.birthDate} onChange={set('birthDate')} />
       <OptionPicker label="Gender" value={form.gender} onChange={set('gender')} options={GENDERS.map((g) => ({ value: g.code, label: g.label }))} />
-      <OptionPicker label="School Year" value={form.schoolyear} onChange={set('schoolyear')} options={SCHOOL_YEARS.map((y) => ({ value: y, label: y }))} />
+      <OptionPicker label="School Year" value={form.schoolyear} onChange={set('schoolyear')} options={schoolYearOptions().map((y) => ({ value: y, label: y }))} />
       <OptionPicker label="Major" value={form.major} onChange={set('major')} options={MAJORS.map((m) => ({ value: m.code, label: m.label }))} />
 
       <View style={styles.termsRow}>

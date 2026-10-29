@@ -1,6 +1,10 @@
 export const EMAIL_DOMAIN = '@student.umn.ac.id';
 export const MIN_AGE = 17;
-export const SCHOOL_YEARS = ['2021', '2022', '2023', '2024', '2025'] as const;
+/** The last five intake years up to the current one. It moves forward by itself every January (2022-2026 in 2026). */
+export function schoolYearOptions(now: Date = new Date()): string[] {
+  const current = now.getFullYear();
+  return Array.from({ length: 5 }, (_, i) => String(current - 4 + i));
+}
 
 export const GENDERS = [
   { code: 'M', label: 'Male' },

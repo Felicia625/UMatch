@@ -4,14 +4,18 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button, HEADER_EDGES, OptionPicker, Screen, TextField } from '../../src/components/ui';
-import { GENDERS, MAJORS, MIN_AGE, SCHOOL_YEARS, YEAR_PREFERENCES } from '../../src/constants/options';
+import { GENDERS, MAJORS, MIN_AGE, schoolYearOptions } from '../../src/constants/options';
 import { PersonPlaceholder } from '../../src/components/Avatar';
+import { BirthDateField } from '../../src/components/BirthDateField';
+import { PreferenceFields } from '../../src/components/PreferenceFields';
 import { useTheme } from '../../src/constants/theme';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { friendlyAuthError } from '../../src/services/auth';
+import { ageFromBirthDate } from '../../src/utils/age';
+import { oppositeGender } from '../../src/utils/preferences';
 import { uploadProfilePhoto } from '../../src/services/uploads';
 import { getUser, updateUser } from '../../src/services/users';
-import { Gender, MajorCode, UserProfile } from '../../src/types';
+import { MajorCode, Preferences, UserProfile } from '../../src/types';
 
 const majorOptions = MAJORS.map((m) => ({ value: m.code, label: m.label }));
 
@@ -28,12 +32,10 @@ export default function EditProfile() {
   const [username, setUsername] = useState('');
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
-  const [age, setAge] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [schoolyear, setSchoolyear] = useState('');
   const [major, setMajor] = useState('');
-  const [prefGender, setPrefGender] = useState<Gender>('F');
-  const [prefYear, setPrefYear] = useState('All');
-  const [prefMajors, setPrefMajors] = useState<MajorCode[]>([]);
+  const [prefs, setPrefs] = useState<Preferences>({ gender: 'F', yearPreferences: 'All', majorPreferences: [] });
 
   useEffect(() => {
     if (!user) return;
@@ -44,12 +46,10 @@ export default function EditProfile() {
         setUsername(p.username);
         setName(p.name);
         setBio(p.bio);
-        setAge(p.age ? String(p.age) : '');
+        setBirthDate(p.birthDate ?? '');
         setSchoolyear(p.schoolyear);
         setMajor(p.major ?? '');
-        setPrefGender(p.preference.gender);
-        setPrefYear(p.preference.yearPreferences);
-        setPrefMajors(p.preference.majorPreferences);
+        setPrefs(p.preference);
       })
       .catch(() => Alert.alert('Failed to load profile'));
   }, [user]);
@@ -87,8 +87,9 @@ export default function EditProfile() {
 
   async function onSave() {
     if (!user || !loaded) return;
-    const ageNum = Number(age);
-    if (!Number.isInteger(ageNum) || ageNum < MIN_AGE) return Alert.alert(`Minimum age is ${MIN_AGE}`);
+    const age = ageFromBirthDate(birthDate);
+    if (age === null) return Alert.alert('Please enter your date of birth');
+    if (age < MIN_AGE) return Alert.alert(`Minimum age is ${MIN_AGE}`);
     if (!username.trim() || !name.trim()) return Alert.alert('Username and name are required');
 
     setSaving(true);
@@ -106,10 +107,10 @@ export default function EditProfile() {
         username: username.trim(),
         name: name.trim(),
         bio: bio.trim(),
-        age: ageNum,
+        birthDate,
         schoolyear,
         major: (major || undefined) as MajorCode | undefined,
-        preference: { gender: prefGender, yearPreferences: prefYear, majorPreferences: prefMajors },
+        preference: { ...prefs, gender: oppositeGender(loaded.gender) },
       };
       if (!patch.major) delete patch.major; // Firestore rejects undefined values
       if (photoUrl) {
@@ -125,8 +126,11 @@ export default function EditProfile() {
     }
   }
 
+  // The intake years follow the calendar; keep the saved one in the list even when it has dropped out of the window.
+  const yearOptions = Array.from(new Set([...(schoolyear ? [schoolyear] : []), ...schoolYearOptions()]))
+    .sort()
+    .map((y) => ({ value: y, label: y }));
   const shownPhoto = photo?.uri ?? loaded?.photoUrl;
-  const remainingMajors = majorOptions.filter((m) => !prefMajors.includes(m.value as MajorCode));
 
   return (
     <Screen edges={HEADER_EDGES}>
@@ -146,36 +150,14 @@ export default function EditProfile() {
           <TextField placeholder="Username" value={username} onChangeText={setUsername} autoCapitalize="none" />
           <TextField placeholder="Full name" value={name} onChangeText={setName} />
           <TextField placeholder="Bio" value={bio} onChangeText={setBio} multiline style={{ height: 96, paddingTop: 14, textAlignVertical: 'top' }} />
-          <TextField placeholder="Age" value={age} onChangeText={setAge} keyboardType="number-pad" />
-          <OptionPicker label="School year" value={schoolyear} onChange={setSchoolyear} options={SCHOOL_YEARS.map((y) => ({ value: y, label: y }))} />
+          <BirthDateField value={birthDate} onChange={setBirthDate} />
+          <OptionPicker label="School year" value={schoolyear} onChange={setSchoolyear} options={yearOptions} />
           <OptionPicker label="Major" value={major} onChange={setMajor} options={majorOptions} />
           <TextField value={loaded.email} editable={false} style={{ opacity: 0.6 }} />
           <TextField value={GENDERS.find((g) => g.code === loaded.gender)?.label ?? ''} editable={false} style={{ opacity: 0.6 }} />
 
           <Text style={[styles.section, { color: t.primary }]}>I'm looking for</Text>
-          <OptionPicker label="Gender" value={prefGender} onChange={(v) => setPrefGender(v as Gender)} options={GENDERS.map((g) => ({ value: g.code, label: g.label }))} />
-          <OptionPicker label="Batch" value={prefYear} onChange={setPrefYear} options={YEAR_PREFERENCES} />
-
-          <View style={styles.chips}>
-            {prefMajors.map((code) => (
-              <Pressable
-                key={code}
-                onPress={() => setPrefMajors((list) => list.filter((c) => c !== code))}
-                style={[styles.chip, { backgroundColor: t.lightPink, borderColor: t.primary }]}
-                accessibilityLabel={`Remove ${code}`}
-              >
-                <Text style={{ color: t.primary }}>{MAJORS.find((m) => m.code === code)?.label ?? code}  ✕</Text>
-              </Pressable>
-            ))}
-          </View>
-          {remainingMajors.length > 0 && (
-            <OptionPicker
-              label="+ Add a major preference"
-              value=""
-              onChange={(v) => setPrefMajors((list) => [...list, v as MajorCode])}
-              options={remainingMajors}
-            />
-          )}
+          <PreferenceFields value={prefs} onChange={setPrefs} />
 
           <Button title="Save" onPress={onSave} loading={saving} />
         </>
@@ -187,6 +169,4 @@ export default function EditProfile() {
 const styles = StyleSheet.create({
   photo: { width: 140, height: 140, borderRadius: 70 },
   section: { fontWeight: '700', marginTop: 12, marginBottom: 8 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  chip: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
 });

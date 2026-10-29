@@ -16,7 +16,8 @@ export interface UserProfile {
   username: string;
   name: string;
   email: string;
-  age: number;
+  age: number; // worked out from birthDate every time a profile is loaded
+  birthDate?: string; // 'YYYY-MM-DD'; missing on very old accounts that only stored an age
   gender: Gender;
   major?: MajorCode;
   schoolyear: string;
@@ -34,7 +35,7 @@ export interface RegistrationInput {
   name: string;
   email: string;
   password: string;
-  age: number;
+  birthDate: string; // 'YYYY-MM-DD'
   gender: Gender;
   schoolyear: string;
   major: MajorCode;
