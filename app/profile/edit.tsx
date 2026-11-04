@@ -7,6 +7,7 @@ import { Button, HEADER_EDGES, OptionPicker, Screen, TextField } from '../../src
 import { GENDERS, MAJORS, MIN_AGE, schoolYearOptions } from '../../src/constants/options';
 import { PersonPlaceholder } from '../../src/components/Avatar';
 import { BirthDateField } from '../../src/components/BirthDateField';
+import { FriendModeSwitch } from '../../src/components/FriendModeSwitch';
 import { PreferenceFields } from '../../src/components/PreferenceFields';
 import { useTheme } from '../../src/constants/theme';
 import { useAuth } from '../../src/providers/AuthProvider';
@@ -33,6 +34,7 @@ export default function EditProfile() {
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [birthDate, setBirthDate] = useState('');
+  const [friendFirst, setFriendFirst] = useState(false);
   const [schoolyear, setSchoolyear] = useState('');
   const [major, setMajor] = useState('');
   const [prefs, setPrefs] = useState<Preferences>({ gender: 'F', yearPreferences: 'All', majorPreferences: [] });
@@ -47,6 +49,7 @@ export default function EditProfile() {
         setName(p.name);
         setBio(p.bio);
         setBirthDate(p.birthDate ?? '');
+        setFriendFirst(p.friendFirst);
         setSchoolyear(p.schoolyear);
         setMajor(p.major ?? '');
         setPrefs(p.preference);
@@ -108,6 +111,7 @@ export default function EditProfile() {
         name: name.trim(),
         bio: bio.trim(),
         birthDate,
+        friendFirst,
         schoolyear,
         major: (major || undefined) as MajorCode | undefined,
         preference: { ...prefs, gender: oppositeGender(loaded.gender) },
@@ -147,6 +151,7 @@ export default function EditProfile() {
             <Text style={{ color: t.primary, fontWeight: '600', marginTop: 8 }}>Change photo</Text>
           </Pressable>
 
+          <FriendModeSwitch value={friendFirst} onChange={setFriendFirst} />
           <TextField placeholder="Username" value={username} onChangeText={setUsername} autoCapitalize="none" />
           <TextField placeholder="Full name" value={name} onChangeText={setName} />
           <TextField placeholder="Bio" value={bio} onChangeText={setBio} multiline style={{ height: 96, paddingTop: 14, textAlignVertical: 'top' }} />

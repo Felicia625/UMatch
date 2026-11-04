@@ -26,6 +26,7 @@ export interface UserProfile {
   photoUrl: string;
   photoUrls: string[];
   photoVerified: boolean;
+  friendFirst: boolean; // friend mode: only other friend-mode users are shown, any gender
   interests: string[];
   preference: Preferences;
 }
@@ -39,6 +40,7 @@ export interface RegistrationInput {
   gender: Gender;
   schoolyear: string;
   major: MajorCode;
+  friendFirst: boolean;
 }
 
 // swipes/{uid}

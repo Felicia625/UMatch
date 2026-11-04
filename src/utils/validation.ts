@@ -11,6 +11,7 @@ export interface RegistrationForm {
   gender: string; // Gender code
   schoolyear: string;
   major: string; // MajorCode
+  friendFirst: boolean;
 }
 
 type Result = { input: RegistrationInput } | { error: string };
@@ -38,5 +39,5 @@ export function validateRegistration(f: RegistrationForm, acceptedTerms: boolean
   const schoolyear = schoolYearOptions().find((y) => y === f.schoolyear);
   if (!gender || !major || !schoolyear) return { error: 'Please fill all fields' };
 
-  return { input: { username, name, email, password, birthDate: f.birthDate, gender, schoolyear, major } };
+  return { input: { username, name, email, password, birthDate: f.birthDate, gender, schoolyear, major, friendFirst: f.friendFirst } };
 }

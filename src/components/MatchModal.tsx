@@ -7,10 +7,12 @@ import { Button } from './ui';
 
 export function MatchModal({
   user,
+  friend,
   onChat,
   onClose,
 }: {
   user: UserProfile | null;
+  friend?: boolean;
   onChat: () => void;
   onClose: () => void;
 }) {
@@ -19,7 +21,7 @@ export function MatchModal({
     <Modal visible={!!user} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={[styles.dialog, { backgroundColor: t.surface }]}>
-          <Text style={[styles.title, { color: t.primary }]}>It's a match!</Text>
+          <Text style={[styles.title, { color: t.primary }]}>{friend ? "You're now friends!" : "It's a match!"}</Text>
           <Text style={{ color: t.textSecondary, marginBottom: 16 }}>You and {user?.name} liked each other.</Text>
           {user?.photoUrl ? (
             <Image source={{ uri: user.photoUrl }} style={styles.photo} contentFit="cover" />

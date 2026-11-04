@@ -57,6 +57,7 @@ export function toUserProfile(uid: string, d: DocumentData): UserProfile {
     photoUrl: d.photoUrl ?? '',
     photoUrls: Array.isArray(d.photoUrls) ? d.photoUrls : [],
     photoVerified: d.photoVerified === true,
+    friendFirst: d.friendFirst === true,
     interests: Array.isArray(d.interests) ? d.interests : [],
     preference: {
       gender: oppositeGender(gender), // always the opposite gender, whatever an older document says
@@ -98,6 +99,7 @@ export async function createUserDocument(uid: string, input: RegistrationInput):
     photoUrl: '',
     photoUrls: [],
     photoVerified: false,
+    friendFirst: input.friendFirst,
     interests: [],
     // Default preference = opposite gender, same as the Android app
     preference: {

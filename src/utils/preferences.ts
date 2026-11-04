@@ -1,8 +1,18 @@
 import { YEAR_PREFERENCES } from '../constants/options';
-import { Gender } from '../types';
+import { Gender, UserProfile } from '../types';
 
 /** The app only shows people of the opposite gender, so this is derived instead of being a setting. */
 export const oppositeGender = (g: Gender): Gender => (g === 'M' ? 'F' : 'M');
+
+/**
+ * Who can see whom. Friend-first users only meet other friend-first users, of any gender. Everyone else only meets
+ * other non-friend-first users of the opposite gender.
+ */
+export function isCompatible(me: UserProfile, other: UserProfile): boolean {
+  if (me.uid === other.uid) return false;
+  if (me.friendFirst || other.friendFirst) return me.friendFirst && other.friendFirst;
+  return other.gender === oppositeGender(me.gender);
+}
 
 export function yearPreferenceLabel(pref: string): string {
   return YEAR_PREFERENCES.find((p) => p.value === pref)?.label ?? pref;

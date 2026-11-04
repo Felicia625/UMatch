@@ -4,12 +4,13 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button, OptionPicker, PasswordField, Screen, TextField } from '../../src/components/ui';
 import { GENDERS, MAJORS, schoolYearOptions } from '../../src/constants/options';
 import { BirthDateField } from '../../src/components/BirthDateField';
+import { FriendModeSwitch } from '../../src/components/FriendModeSwitch';
 import { useTheme } from '../../src/constants/theme';
 import { friendlyAuthError, register } from '../../src/services/auth';
 import { RegistrationForm, validateRegistration } from '../../src/utils/validation';
 
 const emptyForm: RegistrationForm = {
-  username: '', password: '', name: '', email: '', birthDate: '', gender: '', schoolyear: '', major: '',
+  username: '', password: '', name: '', email: '', birthDate: '', gender: '', schoolyear: '', major: '', friendFirst: false,
 };
 
 export default function Register() {
@@ -18,7 +19,7 @@ export default function Register() {
   const [form, setForm] = useState(emptyForm);
   const [accepted, setAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const set = (key: keyof RegistrationForm) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
+  const set = (key: Exclude<keyof RegistrationForm, 'friendFirst'>) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
 
   async function onSignUp() {
     const result = validateRegistration(form, accepted);
@@ -43,6 +44,8 @@ export default function Register() {
       </Pressable>
       <Text style={[styles.title, { color: t.text }]}>Create Account</Text>
       <Text style={[styles.subtitle, { color: t.textSecondary }]}>Join UMN Dating today</Text>
+
+      <FriendModeSwitch value={form.friendFirst} onChange={(v) => setForm((f) => ({ ...f, friendFirst: v }))} />
 
       <TextField placeholder="Username" value={form.username} onChangeText={set('username')} autoCapitalize="none" />
       <PasswordField placeholder="Password" value={form.password} onChangeText={set('password')} />

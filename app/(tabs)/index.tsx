@@ -21,9 +21,9 @@ type Status = 'loading' | 'ready' | 'error';
 const DEFAULT_PREFERENCES: Preferences = { gender: 'F', yearPreferences: 'All', majorPreferences: [] };
 
 // Plain-language summary of who the deck is looking for, shown when nothing matches.
-function describeCriteria(p: Preferences): string {
+function describeCriteria(p: Preferences, friendMode: boolean): string {
   return [
-    GENDERS.find((g) => g.code === p.gender)?.label ?? '',
+    friendMode ? 'Friends, any gender' : GENDERS.find((g) => g.code === p.gender)?.label ?? '',
     p.yearPreferences === 'All' ? 'any batch' : yearPreferenceLabel(p.yearPreferences).toLowerCase(),
     p.majorPreferences.length
       ? p.majorPreferences.map((c) => MAJORS.find((m) => m.code === c)?.label ?? c).join(', ')
@@ -41,6 +41,7 @@ export default function Home() {
   const [status, setStatus] = useState<Status>('loading');
   const [deckKey, setDeckKey] = useState(0); // remount the deck on every reload so it starts at card 0
   const [prefs, setPrefs] = useState<Preferences | null>(null); // the saved "I'm looking for" preferences
+  const [friendMode, setFriendMode] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [match, setMatch] = useState<{ user: UserProfile; matchId: string } | null>(null);
   const [tutorialOpen, setTutorialOpen] = useState(false);
@@ -68,6 +69,7 @@ export default function Home() {
       const me = await getUser(user.uid); // re-read so preferences changed in Edit Profile are picked up
       if (!me) throw new Error('Profile not found');
       setPrefs(me.preference);
+      setFriendMode(me.friendFirst);
       setUsers(await loadCandidates(me));
       setDeckKey((k) => k + 1);
       setStatus('ready');
@@ -100,6 +102,7 @@ export default function Home() {
   const filtered = !!prefs && (prefs.yearPreferences !== 'All' || prefs.majorPreferences.length > 0);
   useLayoutEffect(() => {
     navigation.setOptions({
+      title: friendMode ? 'Find Friends' : 'Discover',
       headerRight: () => (
         <>
           <Pressable onPress={load} hitSlop={10} accessibilityLabel="Refresh">
@@ -111,7 +114,7 @@ export default function Home() {
         </>
       ),
     });
-  }, [navigation, load, prefs, filtered]);
+  }, [navigation, load, prefs, filtered, friendMode]);
 
   async function onSwipe(target: UserProfile, direction: SwipeDirection) {
     if (!user) return;
@@ -132,7 +135,7 @@ export default function Home() {
   const empty = (
     <View style={styles.center}>
       <Text style={{ color: t.text, fontSize: 18, fontWeight: '700' }}>No profiles to show</Text>
-      {prefs && <Text style={{ color: t.text, textAlign: 'center', marginTop: 8 }}>Looking for: {describeCriteria(prefs)}</Text>}
+      {prefs && <Text style={{ color: t.text, textAlign: 'center', marginTop: 8 }}>Looking for: {describeCriteria(prefs, friendMode)}</Text>}
       <Text style={{ color: t.textSecondary, textAlign: 'center', marginVertical: 8 }}>
         Change who you're looking for with the filter button at the top. Profiles you already liked or passed are not shown again.
       </Text>
@@ -180,6 +183,7 @@ export default function Home() {
       <TutorialModal visible={tutorialOpen} onClose={closeTutorial} />
       <MatchModal
         user={match?.user ?? null}
+        friend={friendMode}
         onClose={() => setMatch(null)}
         onChat={() => {
           const id = match?.matchId;

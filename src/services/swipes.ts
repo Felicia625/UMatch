@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { UserProfile } from '../types';
-import { matchesYearPreference, oppositeGender } from '../utils/preferences';
+import { isCompatible, matchesYearPreference, oppositeGender } from '../utils/preferences';
 import { toUserProfile } from './users';
 
 export type SwipeDirection = 'left' | 'right';
@@ -50,19 +50,23 @@ export async function loadCandidates(me: UserProfile): Promise<UserProfile[]> {
   const yearPref = me.preference.yearPreferences;
   const majors = me.preference.majorPreferences;
 
-  const constraints: QueryConstraint[] = [where('gender', '==', oppositeGender(me.gender))];
+  // Friend mode: other friend-mode users of any gender. Dating mode: the opposite gender (friend-mode users are removed below).
+  const constraints: QueryConstraint[] = me.friendFirst
+    ? [where('friendFirst', '==', true)]
+    : [where('gender', '==', oppositeGender(me.gender))];
   if (/^\d{4}$/.test(yearPref)) constraints.push(where('schoolyear', '==', yearPref));
 
   const snap = await getDocs(query(collection(db, 'users'), ...constraints, limit(CANDIDATE_LIMIT)));
   const all = snap.docs.map((d) => toUserProfile(d.id, d.data()));
-  const notSwiped = all.filter((u) => !excluded.has(u.uid));
+  const notSwiped = all.filter((u) => !excluded.has(u.uid) && isCompatible(me, u));
   const yearOk = notSwiped.filter((u) => matchesYearPreference(yearPref, me.schoolyear, u.schoolyear));
   const candidates = yearOk.filter((u) => majors.length === 0 || (!!u.major && majors.includes(u.major)));
 
   if (__DEV__) {
     // Shows in the Metro terminal: where the profiles get filtered out.
     console.log('[discover]', {
-      lookingForGender: me.preference.gender,
+      friendMode: me.friendFirst,
+      lookingForGender: me.friendFirst ? 'any' : oppositeGender(me.gender),
       yearPref,
       majors,
       fromFirestore: all.length,
@@ -73,8 +77,8 @@ export async function loadCandidates(me: UserProfile): Promise<UserProfile[]> {
     if (all.length === 0) {
       const sample = await getDocs(query(collection(db, 'users'), limit(20)));
       console.log(
-        `[discover] no users have gender == "${me.preference.gender}". gender values found in users:`,
-        sample.docs.map((d) => `${d.id.slice(0, 6)}: ${JSON.stringify(d.data().gender)}`),
+        `[discover] no users found for this mode. gender / friendFirst values found in users:`,
+        sample.docs.map((d) => `${d.id.slice(0, 6)}: ${JSON.stringify(d.data().gender)} / ${JSON.stringify(d.data().friendFirst)}`),
       );
     }
   }

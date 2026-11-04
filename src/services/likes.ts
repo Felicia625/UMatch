@@ -13,7 +13,8 @@ import {
 import { db } from '../config/firebase';
 import { UserProfile } from '../types';
 import { ensureMatch } from './swipes';
-import { getUsersByIds as loadUsers } from './users';
+import { isCompatible } from '../utils/preferences';
+import { getUser, getUsersByIds as loadUsers } from './users';
 
 async function mySwipes(myId: string) {
   const snap = await getDoc(doc(db, 'swipes', myId));
@@ -28,12 +29,15 @@ async function mySwipes(myId: string) {
  * these; an array-contains query does the same job on the server.
  */
 export async function getUsersWhoLikedMe(myId: string): Promise<UserProfile[]> {
-  const [likedMe, mine] = await Promise.all([
+  const [likedMe, mine, me] = await Promise.all([
     getDocs(query(collection(db, 'swipes'), where('liked', 'array-contains', myId))),
     mySwipes(myId),
+    getUser(myId),
   ]);
   const already = new Set(mine.liked);
-  return loadUsers(likedMe.docs.map((d) => d.id).filter((id) => id !== myId && !already.has(id)));
+  const users = await loadUsers(likedMe.docs.map((d) => d.id).filter((id) => id !== myId && !already.has(id)));
+  // Hide people from the other mode (for example, someone who liked you before either of you switched to friend mode).
+  return me ? users.filter((u) => isCompatible(me, u)) : users;
 }
 
 export async function getUsersILiked(myId: string): Promise<UserProfile[]> {
