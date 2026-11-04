@@ -1,17 +1,17 @@
-# UMN Dating: React Native (Expo + TypeScript)
+# UMatch: React Native (Expo + TypeScript)
 
 Kotlin to Expo rewrite so far: project structure, typed data model, Firebase auth, the
 splash / onboarding / login / register / terms flow, the swipe deck (like / pass / match / filters), a read-only profile view, and the own-profile area (view, edit with photo upload, who liked me / people I liked / people I passed, change password, delete account).
 Not yet run on a device, so expect a few small fixes on first launch.
 
 ## Set up
-1. `npx create-expo-app@latest umn-dating` (default template), then `cd umn-dating`
+1. `npx create-expo-app@latest umatch` (default template), then `cd umatch`
 2. `npm run reset-project`, then delete the generated `app-example/` folder
 3. Copy this folder's `app/`, `src/`, `assets/logo.png` and `.env.example` into the project (overwrite `app/`)
 4. `npx expo install firebase @react-native-async-storage/async-storage expo-splash-screen expo-image expo-image-picker react-native-gesture-handler react-native-reanimated`
    (if Expo says reanimated needs `react-native-worklets`, `npx expo install react-native-worklets` too)
 5. Copy `.env.example` to `.env` and fill in your Firebase web-app values
-6. In `app.json` add `["expo-image-picker", { "cameraPermission": "Allow UMN Dating to use the camera for your profile photo." }]` to `plugins`, and set `"scheme": "umndating"`, `"android.package": "com.example.datingapp"`, `"name": "UMN Dating"`
+6. In `app.json` add `["expo-image-picker", { "cameraPermission": "Allow UMatch to use the camera for your profile photo." }]` to `plugins`, and set `"scheme": "umndating"`, `"android.package": "com.example.datingapp"`, `"name": "UMatch"`
    and point `icon` to `./assets/logo.png`
 7. `npx expo start`  (Expo Go is fine for this phase; push notifications will need a dev build later)
 
