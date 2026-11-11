@@ -50,13 +50,14 @@ export function FormModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={[styles.dialog, { backgroundColor: t.surface }]}>
-          <Text style={[styles.title, { color: t.text }]}>{title}</Text>
-          {!!message && <Text style={{ color: t.textSecondary, marginBottom: 12 }}>{message}</Text>}
+          <Text style={[styles.title, { color: t.text, marginBottom: message ? 6 : 16 }]}>{title}</Text>
+          {!!message && <Text style={{ color: t.textSecondary, fontSize: 13, lineHeight: 18, marginBottom: 16 }}>{message}</Text>}
           {fields.map((f) => {
             const Field = f.secure ? PasswordField : TextField; // password fields get the show/hide eye button
             return (
               <Field
                 key={f.key}
+                compact
                 placeholder={f.placeholder}
                 autoCapitalize="none"
                 value={values[f.key] ?? ''}
@@ -64,8 +65,8 @@ export function FormModal({
               />
             );
           })}
-          <Button title={submitLabel} variant={destructive ? 'danger' : 'primary'} loading={busy} onPress={submit} />
-          <Button title="Cancel" variant="ghost" onPress={onClose} disabled={busy} />
+          <Button compact title={submitLabel} variant={destructive ? 'danger' : 'primary'} loading={busy} onPress={submit} />
+          <Button compact title="Cancel" variant="ghost" onPress={onClose} disabled={busy} />
         </View>
       </View>
     </Modal>
@@ -75,5 +76,5 @@ export function FormModal({
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
   dialog: { borderRadius: 16, padding: 20 },
-  title: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
+  title: { fontSize: 17, fontWeight: '700' },
 });

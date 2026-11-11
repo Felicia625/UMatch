@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { renderAppHeader } from '../src/components/AppHeader';
+import { NotificationWatcher } from '../src/components/NotificationWatcher';
 import { useThemeSettings } from '../src/constants/theme';
 import { AuthProvider, isSignedIn, useAuth } from '../src/providers/AuthProvider';
 import { ThemeProvider } from '../src/providers/ThemeProvider';
@@ -53,6 +54,7 @@ export default function RootLayout() {
       <ThemeProvider>
         <AuthProvider>
           <AuthGate />
+          <NotificationWatcher />
         </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>

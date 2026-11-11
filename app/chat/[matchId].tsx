@@ -20,6 +20,7 @@ import { useTheme } from '../../src/constants/theme';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { deleteMessage, editMessage, sendMessage, setPinned, subscribeToChat } from '../../src/services/chat';
 import { canChat } from '../../src/services/matches';
+import { setActiveChat } from '../../src/services/notifications';
 import { getUser } from '../../src/services/users';
 import { Message, UserProfile } from '../../src/types';
 import { formatTime } from '../../src/utils/dates';
@@ -32,6 +33,12 @@ export default function Chat() {
   const { matchId } = useLocalSearchParams<{ matchId: string }>();
   const myId = user?.uid ?? '';
   const partnerId = matchId?.split('_').find((p) => p !== myId);
+
+  // Tells the notification watcher this conversation is on screen.
+  useEffect(() => {
+    setActiveChat(matchId ?? null);
+    return () => setActiveChat(null);
+  }, [matchId]);
 
   const [partner, setPartner] = useState<UserProfile | null>(null);
   const [allowed, setAllowed] = useState(false);

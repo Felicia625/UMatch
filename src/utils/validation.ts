@@ -1,11 +1,11 @@
 import { EMAIL_DOMAIN, GENDERS, MAJORS, MIN_AGE, schoolYearOptions } from '../constants/options';
 import { RegistrationInput } from '../types';
 import { ageFromBirthDate } from './age';
+import { displayNameFromEmail } from './names';
 
 export interface RegistrationForm {
   username: string;
   password: string;
-  name: string;
   email: string;
   birthDate: string; // 'YYYY-MM-DD', or '' until all three dropdowns are chosen
   gender: string; // Gender code
@@ -19,11 +19,11 @@ type Result = { input: RegistrationInput } | { error: string };
 // Same rules as RegisterActivity.kt
 export function validateRegistration(f: RegistrationForm, acceptedTerms: boolean): Result {
   const username = f.username.trim();
-  const name = f.name.trim();
   const email = f.email.trim().toLowerCase();
+  const name = displayNameFromEmail(email); // the full name is not asked for: it is set from the email
   const password = f.password.trim();
 
-  if (!username || !password || !name || !email || !f.birthDate || !f.gender || !f.schoolyear || !f.major) {
+  if (!username || !password || !email || !f.birthDate || !f.gender || !f.schoolyear || !f.major) {
     return { error: 'Please fill all fields' };
   }
   if (!acceptedTerms) return { error: 'Please agree to the Terms and Conditions' };
@@ -33,6 +33,7 @@ export function validateRegistration(f: RegistrationForm, acceptedTerms: boolean
   if (age === null) return { error: 'Please enter a valid date of birth' };
   if (age < MIN_AGE) return { error: `Minimum age is ${MIN_AGE}` };
   if (!email.endsWith(EMAIL_DOMAIN)) return { error: `Only ${EMAIL_DOMAIN} emails are allowed` };
+  if (!name) return { error: 'Please enter a valid email address' };
 
   const gender = GENDERS.find((g) => g.code === f.gender)?.code;
   const major = MAJORS.find((m) => m.code === f.major)?.code;

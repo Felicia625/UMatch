@@ -65,7 +65,7 @@ export async function sendMessage(matchId: string, myId: string, text: string, r
   }
   const batch = writeBatch(db);
   batch.set(ref, data);
-  batch.update(doc(db, 'matches', matchId), { lastMessage: text, timestamp: serverTimestamp() });
+  batch.update(doc(db, 'matches', matchId), { lastMessage: text, lastSenderId: myId, timestamp: serverTimestamp() });
   await batch.commit();
 }
 

@@ -31,7 +31,6 @@ export default function EditProfile() {
   const [saving, setSaving] = useState(false);
   const [photo, setPhoto] = useState<{ uri: string; base64: string } | null>(null); // newly picked photo, not uploaded yet
   const [username, setUsername] = useState('');
-  const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [friendFirst, setFriendFirst] = useState(false);
@@ -46,7 +45,6 @@ export default function EditProfile() {
         if (!p) return Alert.alert('User data not found.');
         setLoaded(p);
         setUsername(p.username);
-        setName(p.name);
         setBio(p.bio);
         setBirthDate(p.birthDate ?? '');
         setFriendFirst(p.friendFirst);
@@ -93,7 +91,7 @@ export default function EditProfile() {
     const age = ageFromBirthDate(birthDate);
     if (age === null) return Alert.alert('Please enter your date of birth');
     if (age < MIN_AGE) return Alert.alert(`Minimum age is ${MIN_AGE}`);
-    if (!username.trim() || !name.trim()) return Alert.alert('Username and name are required');
+    if (!username.trim()) return Alert.alert('Username is required');
 
     setSaving(true);
     let photoUrl: string | undefined;
@@ -108,7 +106,6 @@ export default function EditProfile() {
     try {
       const patch: Parameters<typeof updateUser>[1] = {
         username: username.trim(),
-        name: name.trim(),
         bio: bio.trim(),
         birthDate,
         friendFirst,
@@ -153,7 +150,10 @@ export default function EditProfile() {
 
           <FriendModeSwitch value={friendFirst} onChange={setFriendFirst} />
           <TextField placeholder="Username" value={username} onChangeText={setUsername} autoCapitalize="none" />
-          <TextField placeholder="Full name" value={name} onChangeText={setName} />
+          <TextField value={loaded.name} editable={false} style={{ opacity: 0.6 }} />
+          <Text style={{ color: t.textSecondary, fontSize: 12, marginTop: -6, marginBottom: 12 }}>
+            Your full name is set from your email and can't be changed.
+          </Text>
           <TextField placeholder="Bio" value={bio} onChangeText={setBio} multiline style={{ height: 96, paddingTop: 14, textAlignVertical: 'top' }} />
           <BirthDateField value={birthDate} onChange={setBirthDate} />
           <OptionPicker label="School year" value={schoolyear} onChange={setSchoolyear} options={yearOptions} />

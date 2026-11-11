@@ -43,6 +43,47 @@ export function subscribeToMatches(
   );
 }
 
+export type MatchEvent =
+  | { kind: 'match'; match: Match } // someone matched with me
+  | { kind: 'message'; match: Match; text: string }; // a new message from my match
+
+/**
+ * New matches and new incoming messages, for notifications. The first snapshot (everything that already exists) is
+ * ignored, and so are my own writes.
+ */
+export function subscribeToMatchEvents(
+  myId: string,
+  onEvent: (event: MatchEvent) => void,
+  onError: (e: unknown) => void,
+): Unsubscribe {
+  let first = true;
+  return onSnapshot(
+    query(collection(db, 'matches'), where('users', 'array-contains', myId)),
+    (snap) => {
+      if (first) {
+        first = false;
+        return;
+      }
+      snap.docChanges().forEach((change) => {
+        if (change.doc.metadata.hasPendingWrites) return; // written by this phone
+        const data = change.doc.data({ serverTimestamps: 'estimate' });
+        if (!Array.isArray(data.users) || data.users.length !== 2) return;
+        const match: Match = {
+          id: change.doc.id,
+          users: [data.users[0], data.users[1]],
+          lastMessage: data.lastMessage ?? '',
+          timestamp: toDate(data.timestamp),
+        };
+        if (change.type === 'added') onEvent({ kind: 'match', match });
+        else if (change.type === 'modified' && data.lastSenderId && data.lastSenderId !== myId) {
+          onEvent({ kind: 'message', match, text: match.lastMessage });
+        }
+      });
+    },
+    onError,
+  );
+}
+
 export interface MatchMeta {
   iLiked: Set<string>;
   likedMe: Set<string>;

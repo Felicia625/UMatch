@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation, useRouter } from 'expo-router';
+import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { FilterModal } from '../../src/components/FilterModal';
@@ -17,6 +17,9 @@ import { Preferences, UserProfile } from '../../src/types';
 import { yearPreferenceLabel } from '../../src/utils/preferences';
 
 type Status = 'loading' | 'ready' | 'error';
+
+// Changes whenever the mode (Friend first) or the saved preferences change, so Home knows its deck is out of date.
+const modeKey = (p: UserProfile) => `${p.friendFirst}|${JSON.stringify(p.preference)}`;
 
 const DEFAULT_PREFERENCES: Preferences = { gender: 'F', yearPreferences: 'All', majorPreferences: [] };
 
@@ -42,6 +45,7 @@ export default function Home() {
   const [deckKey, setDeckKey] = useState(0); // remount the deck on every reload so it starts at card 0
   const [prefs, setPrefs] = useState<Preferences | null>(null); // the saved "I'm looking for" preferences
   const [friendMode, setFriendMode] = useState(false);
+  const loadedKey = useRef(''); // modeKey of the profile the current deck was built from
   const [filterOpen, setFilterOpen] = useState(false);
   const [match, setMatch] = useState<{ user: UserProfile; matchId: string } | null>(null);
   const [tutorialOpen, setTutorialOpen] = useState(false);
@@ -70,6 +74,7 @@ export default function Home() {
       if (!me) throw new Error('Profile not found');
       setPrefs(me.preference);
       setFriendMode(me.friendFirst);
+      loadedKey.current = modeKey(me);
       setUsers(await loadCandidates(me));
       setDeckKey((k) => k + 1);
       setStatus('ready');
@@ -82,6 +87,24 @@ export default function Home() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Home stays mounted behind the other tabs, so switching Friend first on the Profile tab (or changing preferences in
+  // Edit Profile) used to leave the old deck on screen. When this tab is focused again, rebuild the deck if the mode or
+  // preferences changed. An unchanged profile keeps the deck as it is.
+  useFocusEffect(
+    useCallback(() => {
+      if (!user || !loadedKey.current) return;
+      let active = true;
+      getUser(user.uid)
+        .then((me) => {
+          if (active && me && modeKey(me) !== loadedKey.current) load();
+        })
+        .catch(() => {});
+      return () => {
+        active = false;
+      };
+    }, [user, load]),
+  );
 
   // Saves the new preferences (the same ones Edit Profile shows) and rebuilds the deck from them.
   async function applyPreferences(next: Preferences) {

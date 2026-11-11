@@ -5,12 +5,13 @@ import { Button, OptionPicker, PasswordField, Screen, TextField } from '../../sr
 import { GENDERS, MAJORS, schoolYearOptions } from '../../src/constants/options';
 import { BirthDateField } from '../../src/components/BirthDateField';
 import { FriendModeSwitch } from '../../src/components/FriendModeSwitch';
-import { useTheme } from '../../src/constants/theme';
 import { friendlyAuthError, register } from '../../src/services/auth';
+import { displayNameFromEmail } from '../../src/utils/names';
+import { useTheme } from '../../src/constants/theme';
 import { RegistrationForm, validateRegistration } from '../../src/utils/validation';
 
 const emptyForm: RegistrationForm = {
-  username: '', password: '', name: '', email: '', birthDate: '', gender: '', schoolyear: '', major: '', friendFirst: false,
+  username: '', password: '', email: '', birthDate: '', gender: '', schoolyear: '', major: '', friendFirst: false,
 };
 
 export default function Register() {
@@ -20,6 +21,10 @@ export default function Register() {
   const [accepted, setAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const set = (key: Exclude<keyof RegistrationForm, 'friendFirst'>) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
+
+  // There is no Full Name field: the name is set from the email (felicia.sabatini@... -> "Felicia Sabatini") and cannot
+  // be edited later. This only previews it.
+  const namePreview = form.email.includes('@') ? displayNameFromEmail(form.email.trim().toLowerCase()) : '';
 
   async function onSignUp() {
     const result = validateRegistration(form, accepted);
@@ -49,8 +54,18 @@ export default function Register() {
 
       <TextField placeholder="Username" value={form.username} onChangeText={set('username')} autoCapitalize="none" />
       <PasswordField placeholder="Password" value={form.password} onChangeText={set('password')} />
-      <TextField placeholder="Full Name" value={form.name} onChangeText={set('name')} />
-      <TextField placeholder="Email" value={form.email} onChangeText={set('email')} autoCapitalize="none" keyboardType="email-address" />
+      <TextField
+        placeholder="Email"
+        value={form.email}
+        onChangeText={set('email')}
+        autoCapitalize="none"
+        keyboardType="email-address"
+      />
+      <Text style={{ color: t.textSecondary, fontSize: 12, marginTop: -4, marginBottom: 12 }}>
+        {namePreview
+          ? `Your full name will be "${namePreview}". It is set from your email and can't be changed later.`
+          : "Your full name is set from your email and can't be changed later."}
+      </Text>
       <BirthDateField value={form.birthDate} onChange={set('birthDate')} />
       <OptionPicker label="Gender" value={form.gender} onChange={set('gender')} options={GENDERS.map((g) => ({ value: g.code, label: g.label }))} />
       <OptionPicker label="School Year" value={form.schoolyear} onChange={set('schoolyear')} options={schoolYearOptions().map((y) => ({ value: y, label: y }))} />

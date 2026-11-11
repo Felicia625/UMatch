@@ -51,12 +51,14 @@ export function Button({
   loading,
   disabled,
   variant = 'primary',
+  compact,
 }: {
   title: string;
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
   variant?: 'primary' | 'outline' | 'ghost' | 'danger';
+  compact?: boolean; // smaller button for dialogs
 }) {
   const t = useTheme();
   const filled = variant === 'primary' || variant === 'danger';
@@ -67,6 +69,7 @@ export function Button({
       onPress={onPress}
       style={[
         styles.button,
+        compact && styles.buttonCompact,
         variant === 'primary' && { backgroundColor: t.primary },
         variant === 'danger' && { backgroundColor: t.danger },
         variant === 'outline' && { borderWidth: 1.5, borderColor: t.primary },
@@ -76,31 +79,32 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={filled ? t.onPrimary : t.primary} />
       ) : (
-        <Text style={{ color: filled ? t.onPrimary : t.primary, fontWeight: '600', fontSize: 16 }}>{title}</Text>
+        <Text style={{ color: filled ? t.onPrimary : t.primary, fontWeight: '600', fontSize: compact ? 14 : 16 }}>{title}</Text>
       )}
     </Pressable>
   );
 }
 
-export function TextField(props: TextInputProps) {
+export function TextField({ compact, ...props }: TextInputProps & { compact?: boolean }) {
   const t = useTheme();
   return (
     <TextInput
       placeholderTextColor={t.textSecondary}
       {...props}
-      style={[styles.field, { borderColor: t.outline, backgroundColor: t.surface, color: t.text }, props.style]}
+      style={[styles.field, compact && styles.fieldCompact, { borderColor: t.outline, backgroundColor: t.surface, color: t.text }, props.style]}
     />
   );
 }
 
 /** Password input with the usual eye button to show or hide what you typed. */
-export function PasswordField(props: TextInputProps) {
+export function PasswordField({ compact, ...props }: TextInputProps & { compact?: boolean }) {
   const t = useTheme();
   const [visible, setVisible] = useState(false);
   return (
     <View>
       <TextField
         {...props}
+        compact={compact}
         secureTextEntry={!visible}
         autoCapitalize="none"
         autoCorrect={false}
@@ -111,9 +115,9 @@ export function PasswordField(props: TextInputProps) {
         hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel={visible ? 'Hide password' : 'Show password'}
-        style={styles.eye}
+        style={[styles.eye, compact && styles.eyeCompact]}
       >
-        <Ionicons name={visible ? 'eye-off-outline' : 'eye-outline'} size={22} color={t.textSecondary} />
+        <Ionicons name={visible ? 'eye-off-outline' : 'eye-outline'} size={compact ? 20 : 22} color={t.textSecondary} />
       </Pressable>
     </View>
   );
@@ -185,6 +189,9 @@ export function Placeholder({ title, note }: { title: string; note: string }) {
 
 const styles = StyleSheet.create({
   button: { height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+  buttonCompact: { height: 46, borderRadius: 23 },
+  fieldCompact: { height: 46, fontSize: 14, marginBottom: 10 },
+  eyeCompact: { width: 46, height: 46 },
   eye: { position: 'absolute', right: 0, top: 0, width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
   field: { height: 52, borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, fontSize: 16, marginBottom: 12 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 32 },
