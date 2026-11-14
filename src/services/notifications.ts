@@ -27,13 +27,19 @@ export async function getNotificationsEnabled(): Promise<boolean> {
 
 export const setNotificationsEnabled = (value: boolean) => AsyncStorage.setItem(ENABLED_KEY, String(value)).catch(() => {});
 
-/** Android needs a channel; also asks nothing from the user yet. */
+/**
+ * Android likes to have a channel. Creating it must never stop the rest of the setup (asking for permission): some
+ * environments, for example Expo Go on certain SDK versions, cannot create channels, and Android then uses its default.
+ */
 export async function prepareNotifications(): Promise<void> {
-  if (Platform.OS === 'android') {
+  if (Platform.OS !== 'android') return;
+  try {
     await Notifications.setNotificationChannelAsync('default', {
       name: 'Messages and matches',
       importance: Notifications.AndroidImportance.HIGH,
     });
+  } catch (e) {
+    console.warn('Could not create the notification channel, using the default one', e);
   }
 }
 
