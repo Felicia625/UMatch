@@ -21,6 +21,7 @@ import { useAuth } from '../../src/providers/AuthProvider';
 import { deleteMessage, editMessage, sendMessage, setPinned, subscribeToChat } from '../../src/services/chat';
 import { canChat } from '../../src/services/matches';
 import { setActiveChat } from '../../src/services/notifications';
+import { StarterChips } from '../../src/components/StarterChips';
 import { getUser } from '../../src/services/users';
 import { Message, UserProfile } from '../../src/types';
 import { formatTime } from '../../src/utils/dates';
@@ -43,6 +44,7 @@ export default function Chat() {
   const [partner, setPartner] = useState<UserProfile | null>(null);
   const [allowed, setAllowed] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [messagesLoaded, setMessagesLoaded] = useState(false); // so "Ide pembuka" never flashes in a chat that has history
   const [text, setText] = useState('');
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [editing, setEditing] = useState<Message | null>(null);
@@ -78,7 +80,14 @@ export default function Chat() {
 
   useEffect(() => {
     if (!allowed || !matchId) return;
-    return subscribeToChat(matchId, setMessages, (e) => console.warn('Chat listener failed', e));
+    return subscribeToChat(
+      matchId,
+      (list) => {
+        setMessages(list);
+        setMessagesLoaded(true);
+      },
+      (e) => console.warn('Chat listener failed', e),
+    );
   }, [allowed, matchId]);
 
   const pinned = useMemo(() => messages.filter((m) => m.pinned), [messages]);
@@ -164,6 +173,10 @@ export default function Chat() {
           contentContainerStyle={{ padding: 12 }}
           renderItem={({ item }) => <Bubble message={item} mine={item.senderId === myId} onLongPress={() => setMenuFor(item)} />}
         />
+
+        {messagesLoaded && messages.length === 0 && allowed && partner && myId ? (
+          <StarterChips matchId={matchId} myId={myId} partner={partner} onPick={setText} />
+        ) : null}
 
         {(replyTo || editing) && (
           <View style={[styles.composerNote, { backgroundColor: t.surfaceVariant, borderColor: t.outline }]}>

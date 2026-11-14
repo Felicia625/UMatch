@@ -10,7 +10,7 @@ const SECTIONS = [
   ['1. Acceptance of Terms', 'By using UMNDatingApp, you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our service.'],
   ['2. Eligibility', `You must be a current student of Universitas Multimedia Nusantara (UMN) and at least ${MIN_AGE} years old to use this service.`],
   ['3. User Conduct', 'Users must maintain respectful behavior, provide accurate information, and not engage in harassment, spam, or inappropriate content sharing.'],
-  ['4. Privacy and Data', 'We collect and process your data in accordance with our Privacy Policy. Your profile information is visible to other UMN students using the app.'],
+  ['4. Privacy and Data', 'We collect and process your data in accordance with our Privacy Policy. Your profile information is visible to other UMN students using the app. Conversation-starter suggestions may send part of a profile (bio, major and batch, never names or emails) to an AI service to write the suggestion; you can turn this off in Settings.'],
   ['5. Account Termination', 'We reserve the right to suspend or terminate accounts that violate these terms or engage in inappropriate behavior.'],
   ['6. Contact Us', "For questions about these Terms and Conditions, please contact us through the app's support feature."],
 ];

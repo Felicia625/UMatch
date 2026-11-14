@@ -4,6 +4,7 @@ import { Alert, Linking, Pressable, StyleSheet, Switch, Text, View } from 'react
 import { HEADER_EDGES, Screen } from '../src/components/ui';
 import { useTheme, useThemeSettings } from '../src/constants/theme';
 import { ensurePermission, getNotificationsEnabled, setNotificationsEnabled } from '../src/services/notifications';
+import { getAiStartersEnabled, setAiStartersEnabled } from '../src/services/starters';
 
 // Port of SettingsFragment: dark mode switch (remembered) and a link to the Terms.
 export default function Settings() {
@@ -11,9 +12,11 @@ export default function Settings() {
   const router = useRouter();
   const { darkMode, setDarkMode } = useThemeSettings();
   const [notifications, setNotifications] = useState(true);
+  const [aiStarters, setAiStarters] = useState(true);
 
   useEffect(() => {
     getNotificationsEnabled().then(setNotifications);
+    getAiStartersEnabled().then(setAiStarters);
   }, []);
 
   async function onToggleNotifications(value: boolean) {
@@ -48,6 +51,24 @@ export default function Settings() {
         <Switch
           value={notifications}
           onValueChange={onToggleNotifications}
+          trackColor={{ true: t.primary, false: t.outline }}
+          thumbColor="#FFFFFF"
+        />
+      </View>
+
+      <View style={[styles.row, { backgroundColor: t.surface, borderColor: t.outline, marginTop: 12 }]}>
+        <View style={{ flex: 1, paddingRight: 12 }}>
+          <Text style={{ color: t.text, fontSize: 16 }}>AI conversation starters</Text>
+          <Text style={{ color: t.textSecondary, fontSize: 12, marginTop: 2 }}>
+            Sends part of your match's bio, major and batch (no names or emails) to an AI service to write ideas. Off = built-in ideas only.
+          </Text>
+        </View>
+        <Switch
+          value={aiStarters}
+          onValueChange={(v) => {
+            setAiStarters(v);
+            setAiStartersEnabled(v);
+          }}
           trackColor={{ true: t.primary, false: t.outline }}
           thumbColor="#FFFFFF"
         />
