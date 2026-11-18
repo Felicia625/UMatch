@@ -24,17 +24,22 @@ export function Screen({
   children,
   scroll = true,
   edges,
+  centerContent = false,
 }: {
   children: React.ReactNode;
   scroll?: boolean;
   edges?: readonly Edge[];
+  centerContent?: boolean;
 }) {
   const t = useTheme();
   return (
     <SafeAreaView edges={edges} style={{ flex: 1, backgroundColor: t.background }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         {scroll ? (
-          <ScrollView contentContainerStyle={{ padding: 24 }} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            contentContainerStyle={[{ padding: 24 }, centerContent && { flexGrow: 1, justifyContent: 'center' }]}
+            keyboardShouldPersistTaps="handled"
+          >
             {children}
           </ScrollView>
         ) : (

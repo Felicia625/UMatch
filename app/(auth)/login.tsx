@@ -56,7 +56,7 @@ export default function Login() {
   }
 
   return (
-    <Screen>
+    <Screen centerContent>
       <Text style={[styles.title, { color: t.text }]}>Welcome Back</Text>
       <Text style={[styles.subtitle, { color: t.textSecondary }]}>Sign in to continue</Text>
 
@@ -89,7 +89,7 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 28, fontWeight: '800', marginTop: 24 },
+  title: { fontSize: 28, fontWeight: '800' },
   subtitle: { fontSize: 16, marginBottom: 24 },
   link: { textAlign: 'right', marginBottom: 12, fontWeight: '600' },
   or: { textAlign: 'center', marginVertical: 12 },
