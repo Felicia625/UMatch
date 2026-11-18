@@ -10,8 +10,6 @@ export default function Onboarding() {
     <SafeAreaView style={styles.container}>
       <View style={styles.center}>
         <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.small}>Welcome to</Text>
-        <Text style={styles.title}>UMN Dating App</Text>
         <Text style={styles.subtitle}>Find your perfect match</Text>
         <Text style={styles.body}>Connect with people around you</Text>
       </View>
@@ -24,13 +22,11 @@ export default function Onboarding() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: palette.light.primary, padding: 24 },
+  container: { flex: 1, backgroundColor: '#FFFFFF', padding: 24 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  logo: { width: 140, height: 140, marginBottom: 24, borderRadius: 28 },
-  small: { color: '#FFFFFFCC', fontSize: 18 },
-  title: { color: '#FFFFFF', fontSize: 32, fontWeight: '800', marginBottom: 12 },
-  subtitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '600' },
-  body: { color: '#FFFFFFCC', marginTop: 4 },
+  logo: { width: 260, height: 215, marginBottom: 28 },
+  subtitle: { color: palette.light.primary, fontSize: 20, fontWeight: '700' },
+  body: { color: palette.light.textSecondary, marginTop: 4 },
   footer: { paddingBottom: 12 },
-  hint: { color: '#FFFFFFCC', textAlign: 'center', marginTop: 12 },
+  hint: { color: palette.light.textSecondary, textAlign: 'center', marginTop: 12 },
 });

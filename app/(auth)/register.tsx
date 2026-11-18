@@ -48,7 +48,7 @@ export default function Register() {
         <Text style={{ color: t.text, fontSize: 24 }}>←</Text>
       </Pressable>
       <Text style={[styles.title, { color: t.text }]}>Create Account</Text>
-      <Text style={[styles.subtitle, { color: t.textSecondary }]}>Join UMN Dating today</Text>
+      <Text style={[styles.subtitle, { color: t.textSecondary }]}>Join UMatch today</Text>
 
       <FriendModeSwitch value={form.friendFirst} onChange={(v) => setForm((f) => ({ ...f, friendFirst: v }))} />
 

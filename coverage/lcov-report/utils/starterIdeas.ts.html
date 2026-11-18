@@ -1,0 +1,268 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for utils/starterIdeas.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">utils</a> starterIdeas.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>17/17</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>14/14</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>2/2</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>13/13</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line high'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">200x</span>
+<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">60x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { MajorCode, UserProfile } from '../types';
+&nbsp;
+// Built-in conversation starters (Bahasa Indonesia). They need no internet and send no data anywhere, so they are
+// both the first thing shown and the fallback when the AI is off, out of quota or unreachable.
+&nbsp;
+const KEYWORDS: [RegExp, string][] = [
+  [/hik|gunung|mendaki|camping|alam/i, 'Kayaknya kamu suka kegiatan outdoor. Tempat favoritmu buat jalan-jalan atau naik gunung di mana?'],
+  [/musik|music|band|gitar|guitar|piano|konser|nyanyi/i, 'Kamu suka musik, ya? Lagi sering dengerin lagu apa belakangan ini?'],
+  [/film|movie|nonton|drakor|anime|series/i, 'Kamu suka nonton? Film atau series apa yang terakhir bikin kamu ketagihan?'],
+  [/kopi|coffee|kuliner|makan|masak|cafe|kafe/i, 'Kayaknya kamu suka kuliner. Tempat makan atau kafe favorit di sekitar kampus di mana?'],
+  [/game|gaming|esport|valorant|mobile legends/i, 'Kamu suka main game? Lagi sering mainin game apa sekarang?'],
+  [/baca|buku|novel|book/i, 'Kamu suka baca? Buku apa yang paling berkesan buatmu?'],
+  [/futsal|badminton|basket|gym|lari|olahraga|renang|sepak/i, 'Kamu suka olahraga, ya? Biasanya olahraga apa dan sama siapa?'],
+  [/travel|traveling|jalan-jalan|liburan|trip/i, 'Kamu suka jalan-jalan? Tempat mana yang paling ingin kamu kunjungi?'],
+  [/foto|photo|kamera|fotografi/i, 'Kamu suka fotografi? Biasanya motret apa?'],
+  [/kucing|anjing|hewan|\bcat\b|\bdog\b/i, 'Kamu suka hewan? Kamu punya peliharaan, atau pengin punya yang mana?'],
+];
+&nbsp;
+const MAJOR_IDEAS: Partial&lt;Record&lt;MajorCode, string&gt;&gt; = {
+  TI: 'Kamu anak Informatika, ya? Lagi ngerjain proyek atau tugas coding apa nih?',
+  SI: 'Kamu anak Sistem Informasi, ya? Materi kuliah apa yang paling kamu suka sejauh ini?',
+  TK: 'Kamu anak Teknik Komputer, ya? Pernah bikin proyek hardware yang seru?',
+  TE: 'Kamu anak Teknik Elektro, ya? Proyek apa yang paling menantang buatmu?',
+  TF: 'Kamu anak Teknik Fisika, ya? Mata kuliah apa yang paling bikin penasaran?',
+  DKV: 'Kamu anak DKV, ya? Lagi bikin karya apa belakangan ini?',
+  FILM: 'Kamu anak Film dan Animasi, ya? Film apa yang terakhir bikin kamu kagum?',
+  ARSI: 'Kamu anak Arsitektur, ya? Bangunan paling keren yang pernah kamu lihat apa?',
+  AK: 'Kamu anak Akuntansi, ya? Kuliah semester ini lagi seru-serunya di bagian mana?',
+  MANAGEMENT: 'Kamu anak Management, ya? Kamu lebih tertarik ke bisnis apa nanti?',
+  HOTEL: 'Kamu anak Perhotelan, ya? Pengalaman paling seru dari praktikmu apa?',
+  JURNAL: 'Kamu anak Jurnalistik, ya? Topik berita apa yang paling kamu suka tulis?',
+  STRACOM: 'Kamu anak Strategic Communication, ya? Kampanye yang menurutmu paling keren apa?',
+};
+&nbsp;
+const FRIEND_IDEAS = [
+  'Hai! Senang bisa kenalan. Biasanya kamu lebih suka nongkrong atau belajar bareng teman?',
+  'Halo! Lagi cari teman buat ngapain nih: ngobrol santai, olahraga, atau belajar bareng?',
+  'Hai! Ada rekomendasi tempat makan atau nongkrong enak di sekitar kampus?',
+  'Halo! Kegiatan apa yang lagi kamu seneng-senengin sekarang?',
+];
+&nbsp;
+const DATING_IDEAS = [
+  'Hai! Senang bisa match sama kamu. Weekend biasanya kamu ngapain?',
+  'Halo! Kalau lagi senggang, kamu lebih suka di rumah atau jalan-jalan?',
+  'Hai! Ada rekomendasi tempat makan enak di sekitar kampus?',
+  'Halo! Cerita dong, hal apa yang lagi bikin kamu semangat belakangan ini?',
+];
+&nbsp;
+/** Three ideas about the other person. `round` rotates the choice, so "Ide lain" shows a different set. */
+export function ruleBasedStarters(partner: UserProfile, me: UserProfile | null, round = 0): string[] {
+  const specific: string[] = [];
+  for (const [pattern, idea] of KEYWORDS) if (pattern.test(partner.bio)) specific.push(idea);
+  const major = partner.major ? MAJOR_IDEAS[partner.major] : undefined;
+  if (major) specific.push(major);
+  if (me &amp;&amp; partner.schoolyear &amp;&amp; partner.schoolyear === me.schoolyear) {
+    specific.push('Kita seangkatan, ya! Semester ini kuliahmu lagi padat nggak?');
+  }
+  const pool = [...specific, ...(partner.friendFirst ? FRIEND_IDEAS : DATING_IDEAS)];
+  const start = (round * 3) % pool.length;
+  return Array.from({ length: 3 }, (_, i) =&gt; pool[(start + i) % pool.length]);
+}
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-11-18T10:44:51.496Z
+            </div>
+        <script src="../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../sorter.js"></script>
+        <script src="../block-navigation.js"></script>
+    </body>
+</html>
+    

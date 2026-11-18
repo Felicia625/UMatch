@@ -1,30 +1,34 @@
 import { createContext, useContext } from 'react';
 
-// Values ported from res/values/colors.xml and res/values-night/colors.xml
+// UMatch brand colours: UMN dark blue (primary) and the blues used in the UMatch logo
 export const palette = {
   light: {
-    primary: '#db636f',
-    background: '#F8F9FA',
+    primary: '#0D346E', // UMN dark blue
+    accent: '#0661C6', // logo blue
+    accentLight: '#4E89CE', // logo light blue
+    background: '#F5F8FC',
     surface: '#FFFFFF',
     card: '#FFFFFF',
     text: '#212121',
     textSecondary: '#666666',
-    outline: '#E0E0E0',
-    surfaceVariant: '#F5F5F5',
-    lightPink: '#FFF5F7',
+    outline: '#D6E0EE',
+    surfaceVariant: '#EEF3FA',
+    tint: '#E8F0FB',
     danger: '#D32F2F',
     onPrimary: '#FFFFFF',
   },
   dark: {
-    primary: '#db636f',
-    background: '#121212',
-    surface: '#1E1E1E',
-    card: '#2D2D2D',
+    primary: '#3C7CC6', // lighter blue so it stays readable on dark surfaces
+    accent: '#0661C6',
+    accentLight: '#4E89CE',
+    background: '#0E1520',
+    surface: '#162131',
+    card: '#1D2B40',
     text: '#FFFFFF',
     textSecondary: '#B3B3B3',
-    outline: '#404040',
-    surfaceVariant: '#2D2D2D',
-    lightPink: '#FFF5F7',
+    outline: '#2E405A',
+    surfaceVariant: '#1D2B40',
+    tint: '#16304F',
     danger: '#EF5350',
     onPrimary: '#FFFFFF',
   },

@@ -28,7 +28,7 @@ export function PreferenceFields({ value, onChange }: { value: Preferences; onCh
           <Pressable
             key={code}
             onPress={() => onChange({ ...value, majorPreferences: value.majorPreferences.filter((c) => c !== code) })}
-            style={[styles.chip, { backgroundColor: t.lightPink, borderColor: t.primary }]}
+            style={[styles.chip, { backgroundColor: t.tint, borderColor: t.primary }]}
             accessibilityLabel={`Remove ${code}`}
           >
             <Text style={{ color: t.primary }}>

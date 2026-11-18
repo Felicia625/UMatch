@@ -18,10 +18,8 @@ import { yearPreferenceLabel } from '../../src/utils/preferences';
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 // Button colours taken from the Android app's profile screen.
-const PINK = '#FF6EA8';
-const PURPLE = '#9C27B0';
-const ORANGE = '#FF5722';
-const RED = '#E53935';
+const ORANGE = '#F58220'; // warm accent for "passed"
+const RED = '#D32F2F';
 
 // Layout follows the Android ProfileFragment: photo, username and bio, the four action buttons, then the Public Profile,
 // Private Details and Your Preferences cards, then Logout and Delete Account.
@@ -119,8 +117,8 @@ export default function Profile() {
 
         <View style={styles.buttons}>
           <View style={{ flexDirection: 'row', gap: 12 }}>
-            <PillButton style={{ flex: 1 }} label="WHO LIKED YOU" icon="heart" color={PINK} onPress={() => router.push('/lists/liked-me')} />
-            <PillButton style={{ flex: 1 }} label="MY LIKES" icon="heart" color={PURPLE} onPress={() => router.push('/lists/my-likes')} />
+            <PillButton style={{ flex: 1 }} label="WHO LIKED YOU" icon="heart" color={t.accent} onPress={() => router.push('/lists/liked-me')} />
+            <PillButton style={{ flex: 1 }} label="MY LIKES" icon="heart" color={t.primary} onPress={() => router.push('/lists/my-likes')} />
           </View>
           <PillButton label="WHO YOU PASSED" icon="close" color={ORANGE} onPress={() => router.push('/lists/passed')} />
           <PillButton label="EDIT PROFILE" icon="create-outline" color={t.primary} onPress={() => router.push('/profile/edit')} />

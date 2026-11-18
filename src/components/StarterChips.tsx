@@ -61,9 +61,9 @@ export function StarterChips({
           key={item}
           onPress={() => onPick(item)}
           accessibilityRole="button"
-          style={[styles.chip, { backgroundColor: t.lightPink, borderColor: t.primary }]}
+          style={[styles.chip, { backgroundColor: t.tint, borderColor: t.primary }]}
         >
-          <Text style={{ color: '#212121', fontSize: 14 }}>{item}</Text>
+          <Text style={{ color: t.text, fontSize: 14 }}>{item}</Text>
         </Pressable>
       ))}
 

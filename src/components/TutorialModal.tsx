@@ -5,7 +5,7 @@ import { Button } from './ui';
 
 // Steps from MainActivity.showTutorial()
 const STEPS: [string, string][] = [
-  ['Welcome to UMN Dating App!', 'Swipe right to like, left to pass on potential matches.'],
+  ['Welcome to UMatch!', 'Swipe right to like, left to pass on potential matches.'],
   ['Find Your Matches', 'Check your matches and start conversations in the Matches tab.'],
   ['Your Profile', 'Edit your profile, view likes, and manage settings from the Profile tab.'],
   ['Need Help?', 'Tap the help button at the top of Home or Profile anytime for the guide.'],
