@@ -20,7 +20,7 @@ export function UserCard({ user }: { user: UserProfile }) {
       )}
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1}>
-          {user.name}
+          {user.username}
           {user.age ? `, ${user.age}` : ''}
           {user.photoVerified ? '  ✓' : ''}
         </Text>

@@ -37,7 +37,7 @@ const CONFIG: Record<
     action: 'Like back',
     load: getUsersWhoLikedMe,
     run: likeBack,
-    done: (u) => `Matched with ${u.name}!`,
+    done: (u) => `Matched with ${u.username}!`,
   },
   'my-likes': {
     title: 'People I liked',
@@ -45,8 +45,8 @@ const CONFIG: Record<
     action: 'Unlike',
     load: getUsersILiked,
     run: unlikeUser,
-    confirm: (u) => ({ title: `Unlike ${u.name}?`, message: 'This will remove them from your liked list.' }),
-    done: (u) => `Unliked ${u.name}`,
+    confirm: (u) => ({ title: `Unlike ${u.username}?`, message: 'This will remove them from your liked list.' }),
+    done: (u) => `Unliked ${u.username}`,
   },
   passed: {
     title: 'People I passed',
@@ -137,7 +137,7 @@ export default function UserList() {
                   <PersonPlaceholder style={styles.photo} iconSize={80} />
                 )}
                 <Text style={{ color: t.text, fontWeight: '700', padding: 8 }} numberOfLines={1}>
-                  {item.name}
+                  {item.username}
                   {item.age ? `, ${item.age}` : ''}
                 </Text>
               </Pressable>

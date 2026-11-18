@@ -54,17 +54,17 @@ export function NotificationWatcher() {
           if (!partner) return;
 
           if (event.kind === 'message') {
-            await notifyLocal({ title: partner.name, body: truncate(event.text), matchId: event.match.id });
+            await notifyLocal({ title: partner.username, body: truncate(event.text), matchId: event.match.id });
           } else if (partner.friendFirst) {
             await notifyLocal({
               title: "You're now friends!",
-              body: `You and ${partner.name} are now friends. Say hi!`,
+              body: `You and ${partner.username} are now friends. Say hi!`,
               matchId: event.match.id,
             });
           } else {
             await notifyLocal({
               title: "It's a match!",
-              body: `You and ${partner.name} liked each other. Say hi!`,
+              body: `You and ${partner.username} liked each other. Say hi!`,
               matchId: event.match.id,
             });
           }

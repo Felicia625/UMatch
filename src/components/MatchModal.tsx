@@ -22,7 +22,7 @@ export function MatchModal({
       <View style={styles.backdrop}>
         <View style={[styles.dialog, { backgroundColor: t.surface }]}>
           <Text style={[styles.title, { color: t.primary }]}>{friend ? "You're now friends!" : "It's a match!"}</Text>
-          <Text style={{ color: t.textSecondary, marginBottom: 16 }}>You and {user?.name} liked each other.</Text>
+          <Text style={{ color: t.textSecondary, marginBottom: 16 }}>You and {user?.username} liked each other.</Text>
           {user?.photoUrl ? (
             <Image source={{ uri: user.photoUrl }} style={styles.photo} contentFit="cover" />
           ) : (

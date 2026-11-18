@@ -51,7 +51,7 @@ export default function Matches() {
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (rows ?? []).filter(
-      (r) => (favoritesOnly ? r.favorite : r.status === tab) && (!q || r.partner.name.toLowerCase().includes(q)),
+      (r) => (favoritesOnly ? r.favorite : r.status === tab) && (!q || r.partner.username.toLowerCase().includes(q)),
     );
   }, [rows, tab, favoritesOnly, search]);
 
@@ -82,7 +82,7 @@ export default function Matches() {
     if (!myId) return;
     const blocked = r.status === 'blocked';
     const action = blocked ? 'Unblock' : 'Block';
-    Alert.alert(`${action} ${r.partner.name}?`, undefined, [
+    Alert.alert(`${action} ${r.partner.username}?`, undefined, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: action,
@@ -148,11 +148,11 @@ export default function Matches() {
           renderItem={({ item }) => (
             <Pressable onPress={() => open(item)} style={[styles.row, { borderColor: t.outline }]}>
               <Pressable onPress={() => router.push(`/profile/${item.partner.uid}`)} accessibilityLabel="View profile">
-                <Avatar uri={item.partner.photoUrl} name={item.partner.name} size={56} />
+                <Avatar uri={item.partner.photoUrl} name={item.partner.username} size={56} />
               </Pressable>
               <View style={{ flex: 1, marginHorizontal: 12 }}>
                 <Text style={{ color: t.text, fontWeight: '700', fontSize: 16 }} numberOfLines={1}>
-                  {item.partner.name}
+                  {item.partner.username}
                 </Text>
                 <Text style={{ color: t.textSecondary }} numberOfLines={1}>
                   {item.match.lastMessage}
