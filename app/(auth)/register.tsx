@@ -44,7 +44,7 @@ export default function Register() {
   }
 
   return (
-    <Screen>
+    <Screen maxWidth={440}>
       <Pressable onPress={() => router.back()} accessibilityRole="button" hitSlop={12}>
         <Text style={{ color: t.text, fontSize: 24 }}>←</Text>
       </Pressable>

@@ -39,5 +39,5 @@ export function TutorialModal({ visible, onClose }: { visible: boolean; onClose:
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
-  dialog: { borderRadius: 16, padding: 20 },
+  dialog: { borderRadius: 16, padding: 20, width: '100%', maxWidth: 440, alignSelf: 'center' },
 });

@@ -1,9 +1,10 @@
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Button } from '../../src/components/ui';
 import { PersonPlaceholder } from '../../src/components/Avatar';
+import { WIDE_SCREEN } from '../../src/constants/layout';
 import { useTheme } from '../../src/constants/theme';
 import { useAuth } from '../../src/providers/AuthProvider';
 import {
@@ -64,6 +65,8 @@ export default function UserList() {
   const { user } = useAuth();
   const { kind } = useLocalSearchParams<{ kind: Kind }>();
   const cfg = CONFIG[kind] ?? CONFIG['my-likes'];
+  const { width } = useWindowDimensions();
+  const columns = width >= WIDE_SCREEN ? 4 : 2; // phones keep two columns
 
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -120,8 +123,9 @@ export default function UserList() {
         <FlatList
           data={users}
           keyExtractor={(u) => u.uid}
-          numColumns={2}
-          contentContainerStyle={{ padding: 12, flexGrow: 1 }}
+          key={columns}
+          numColumns={columns}
+          contentContainerStyle={{ padding: 12, flexGrow: 1, width: '100%', maxWidth: 1000, alignSelf: 'center' }}
           columnWrapperStyle={{ gap: 12 }}
           ListEmptyComponent={
             <View style={styles.center}>

@@ -15,7 +15,10 @@ import { SwipeDirection } from '../services/swipes';
 import { UserProfile } from '../types';
 import { UserCard } from './UserCard';
 
-const SCREEN_W = Dimensions.get('window').width;
+// The card is at most ~460 wide, so on a desktop window the drag threshold and rotation follow the card, not the window.
+const WINDOW_W = Dimensions.get('window').width;
+const SCREEN_W = Math.min(WINDOW_W, 480);
+const FLY = WINDOW_W * 1.5; // distance a card flies off before it is replaced
 const THRESHOLD = SCREEN_W * 0.3;
 const FLING_VELOCITY = 800;
 
@@ -63,7 +66,7 @@ export const UserSwipeDeck = forwardRef<SwipeDeckHandle, Props>(function UserSwi
       swipe: (direction) => {
         if (locked.value || indexRef.current >= usersRef.current.length) return;
         locked.value = true;
-        x.value = withTiming((direction === 'right' ? 1 : -1) * SCREEN_W * 1.5, { duration: 250 }, (finished) => {
+        x.value = withTiming((direction === 'right' ? 1 : -1) * FLY, { duration: 250 }, (finished) => {
           if (finished) runOnJS(complete)(direction);
         });
       },
@@ -86,7 +89,7 @@ export const UserSwipeDeck = forwardRef<SwipeDeckHandle, Props>(function UserSwi
       if (far || fast) {
         const goingRight = (far ? e.translationX : e.velocityX) > 0;
         locked.value = true;
-        x.value = withTiming((goingRight ? 1 : -1) * SCREEN_W * 1.5, { duration: 200 }, (finished) => {
+        x.value = withTiming((goingRight ? 1 : -1) * FLY, { duration: 200 }, (finished) => {
           if (finished) runOnJS(complete)(goingRight ? 'right' : 'left');
         });
       } else {

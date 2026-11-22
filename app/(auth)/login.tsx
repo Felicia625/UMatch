@@ -57,7 +57,7 @@ export default function Login() {
   }
 
   return (
-    <Screen>
+    <Screen maxWidth={440}>
       <Text style={[styles.title, { color: t.text }]}>Welcome Back</Text>
       <Text style={[styles.subtitle, { color: t.textSecondary }]}>Sign in to continue</Text>
 
@@ -97,6 +97,6 @@ const styles = StyleSheet.create({
   link: { textAlign: 'right', marginBottom: 12, fontWeight: '600' },
   or: { textAlign: 'center', marginVertical: 12 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
-  dialog: { borderRadius: 16, padding: 20 },
+  dialog: { borderRadius: 16, padding: 20, width: '100%', maxWidth: 440, alignSelf: 'center' },
   dialogTitle: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
 });

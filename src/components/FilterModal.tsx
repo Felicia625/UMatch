@@ -50,6 +50,6 @@ export function FilterModal({
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
-  dialog: { borderRadius: 16, padding: 20, maxHeight: '90%' },
+  dialog: { borderRadius: 16, padding: 20, maxHeight: '90%', width: '100%', maxWidth: 480, alignSelf: 'center' },
   title: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
 });

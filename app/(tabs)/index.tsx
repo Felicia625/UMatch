@@ -219,7 +219,7 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  deckArea: { flex: 1, marginHorizontal: 16, marginTop: 16 },
+  deckArea: { flex: 1, marginHorizontal: 16, marginTop: 16, width: '100%', maxWidth: 460, alignSelf: 'center' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   actions: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 24, paddingVertical: 16 },
   round: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },

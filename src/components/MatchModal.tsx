@@ -40,7 +40,7 @@ export function MatchModal({
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 },
-  dialog: { borderRadius: 20, padding: 24, alignItems: 'center' },
+  dialog: { borderRadius: 20, padding: 24, alignItems: 'center', width: '100%', maxWidth: 440, alignSelf: 'center' },
   title: { fontSize: 28, fontWeight: '900', marginBottom: 4 },
   photo: { width: 160, height: 160, borderRadius: 80 },
 });

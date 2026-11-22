@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { CONTENT_MAX_WIDTH } from '../../src/constants/layout';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
@@ -97,7 +98,7 @@ export default function Profile() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.background }}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' }]}>
         <View style={{ alignItems: 'center' }}>
           <View style={[styles.photoRing, { borderColor: t.primary }]}>
             {profile?.photoUrl ? (

@@ -285,6 +285,6 @@ const styles = StyleSheet.create({
   input: { flex: 1, maxHeight: 120, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 16 },
   send: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 40 },
-  menu: { borderRadius: 16, paddingVertical: 8 },
+  menu: { borderRadius: 16, paddingVertical: 8, width: '100%', maxWidth: 360, alignSelf: 'center' },
   menuRow: { paddingHorizontal: 20, paddingVertical: 14 },
 });

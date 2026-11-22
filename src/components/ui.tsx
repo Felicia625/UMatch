@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native';
 import { Edge, SafeAreaView } from 'react-native-safe-area-context';
+import { CONTENT_MAX_WIDTH } from '../constants/layout';
 import { useTheme } from '../constants/theme';
 
 // Screens under the app title bar: the bar already covers the top inset.
@@ -24,10 +25,13 @@ export function Screen({
   children,
   scroll = true,
   edges,
+  maxWidth = CONTENT_MAX_WIDTH,
 }: {
   children: React.ReactNode;
   scroll?: boolean;
   edges?: readonly Edge[];
+  /** Widest the content gets on a wide screen (it is centred). Has no effect on a phone. */
+  maxWidth?: number;
 }) {
   const t = useTheme();
   return (
@@ -35,7 +39,7 @@ export function Screen({
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         {scroll ? (
           <ScrollView contentContainerStyle={{ padding: 24 }} keyboardShouldPersistTaps="handled">
-            {children}
+            <View style={{ width: '100%', maxWidth, alignSelf: 'center' }}>{children}</View>
           </ScrollView>
         ) : (
           children
@@ -195,6 +199,6 @@ const styles = StyleSheet.create({
   eye: { position: 'absolute', right: 0, top: 0, width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
   field: { height: 52, borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, fontSize: 16, marginBottom: 12 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 32 },
-  sheet: { borderRadius: 16, maxHeight: '70%', paddingVertical: 8 },
+  sheet: { borderRadius: 16, maxHeight: '70%', paddingVertical: 8, width: '100%', maxWidth: 440, alignSelf: 'center' },
   row: { paddingHorizontal: 20, paddingVertical: 14 },
 });

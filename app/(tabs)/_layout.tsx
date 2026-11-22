@@ -1,15 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { useWindowDimensions } from 'react-native';
+import { WIDE_SCREEN } from '../../src/constants/layout';
 import { renderAppHeader } from '../../src/components/AppHeader';
 import { useTheme } from '../../src/constants/theme';
 
 // Mirrors the bottom navigation in activity_main.xml: Home, Matches, Profile.
 export default function TabsLayout() {
   const t = useTheme();
+  const wide = useWindowDimensions().width >= WIDE_SCREEN;
   return (
     <Tabs
       screenOptions={{
         headerShown: true,
+        // Wide screens: navigation on the left side instead of the bottom bar. Phones keep the bottom bar.
+        tabBarPosition: wide ? 'left' : 'bottom',
         header: renderAppHeader,
         tabBarActiveTintColor: t.primary,
         // Without this the inactive icons and labels use the navigation library's light-theme colour (dark grey),
