@@ -10,6 +10,7 @@ import { useTheme } from '../../src/constants/theme';
 import { MatchRow, MatchStatus, useMatches } from '../../src/hooks/useMatches';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { addFavorite, blockUser, removeFavorite, unblockUser } from '../../src/services/matches';
+import { syncMyConnections } from '../../src/services/connections';
 import { formatListTime } from '../../src/utils/dates';
 
 const TABS: { key: MatchStatus; label: string }[] = [
@@ -56,7 +57,8 @@ export default function Matches() {
   useFocusEffect(
     useCallback(() => {
       refreshMeta();
-    }, [refreshMeta]),
+      if (myId) syncMyConnections(myId); // keeps the published connections list current (only if I chose to share it)
+    }, [refreshMeta, myId]),
   );
 
   const visible = useMemo(() => {

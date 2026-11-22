@@ -122,6 +122,7 @@ export default function Profile() {
             <PillButton style={{ flex: 1 }} label="MY LIKES" icon="thumbs-up" color={t.primary} onPress={() => router.push('/lists/my-likes')} />
           </View>
           <PillButton label="WHO YOU PASSED" icon="close" color={ORANGE} onPress={() => router.push('/lists/passed')} />
+          <PillButton label="MY CONNECTIONS" icon="git-network-outline" color={t.accent} onPress={() => router.push('/connections')} />
           <PillButton label="EDIT PROFILE" icon="create-outline" color={t.primary} onPress={() => router.push('/profile/edit')} />
         </View>
 

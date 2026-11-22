@@ -54,7 +54,7 @@ export async function deleteAccount(password: string): Promise<void> {
     ops.push((b) => b.delete(match.ref));
   }
 
-  const own: DocumentReference[] = [doc(db, 'swipes', uid), doc(db, 'blocks', uid), doc(db, 'users', uid)];
+  const own: DocumentReference[] = [doc(db, 'swipes', uid), doc(db, 'blocks', uid), doc(db, 'connections', uid), doc(db, 'users', uid)];
   own.forEach((ref) => ops.push((b) => b.delete(ref)));
 
   await commit(ops);

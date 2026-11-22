@@ -51,6 +51,21 @@ describe('swipes, blocks, favorites', () => {
   test('owner can read own favorites', () => assertSucceeds(getDoc(doc(umn('alice'), 'favorites/alice'))));
 });
 
+describe('connections (graph)', () => {
+  const conn = (ctx, uid) => doc(ctx, `connections/${uid}`);
+  test('verified user can read someone else\'s published connections', () => assertSucceeds(getDoc(conn(umn('bob'), 'alice'))));
+  test('non-UMN account cannot read connections', () => assertFails(getDoc(conn(fake(), 'alice'))));
+  test('owner can publish a visible list', () => assertSucceeds(setDoc(conn(umn('alice'), 'alice'), { visible: true, partners: ['bob'] })));
+  test('owner can hide: visible false with an empty list', () => assertSucceeds(setDoc(conn(umn('alice'), 'alice'), { visible: false, partners: [] })));
+  test('hidden cannot still carry a list', () => assertFails(setDoc(conn(umn('alice'), 'alice'), { visible: false, partners: ['bob'] })));
+  test("cannot write another person's connections", () => assertFails(setDoc(conn(umn('bob'), 'alice'), { visible: true, partners: ['bob'] })));
+  test('no extra fields', () => assertFails(setDoc(conn(umn('alice'), 'alice'), { visible: true, partners: [], note: 'x' })));
+  test('owner can delete own document (account deletion)', async () => {
+    await assertSucceeds(setDoc(conn(umn('alice'), 'alice'), { visible: true, partners: [] }));
+    await assertSucceeds(deleteDoc(conn(umn('alice'), 'alice')));
+  });
+});
+
 describe('matches', () => {
   test('non-member cannot read a match', () => assertFails(getDoc(doc(umn('carol'), 'matches/alice_bob'))));
   test('member can read a match', () => assertSucceeds(getDoc(doc(umn('bob'), 'matches/alice_bob'))));

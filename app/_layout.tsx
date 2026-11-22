@@ -43,6 +43,7 @@ function AuthGate() {
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
         <Stack.Screen name="profile/edit" options={{ title: 'Edit Profile' }} />
         <Stack.Screen name="profile/[uid]" options={{ title: 'Profile' }} />
+        <Stack.Screen name="connections" options={{ title: 'My connections' }} />
         <Stack.Screen name="lists/[kind]" options={{ title: '' }} />
         <Stack.Screen name="chat/[matchId]" options={{ title: 'Chat' }} />
       </Stack>
