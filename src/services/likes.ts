@@ -24,18 +24,22 @@ async function mySwipes(myId: string) {
   };
 }
 
+/** Ids of everyone I currently like (used to mark who in "Who liked me" is already mutual). */
+export async function getMyLikedIds(myId: string): Promise<string[]> {
+  return (await mySwipes(myId)).liked;
+}
+
 /**
- * People who liked me and that I have not liked back yet. LikesFragment downloaded every swipes document to find
- * these; an array-contains query does the same job on the server.
+ * Everyone who liked me, including people I like back (mutual), so the list stays useful after an unlike: I can see
+ * who liked me and connect again later. LikesFragment downloaded every swipes document to find these; an
+ * array-contains query does the same job on the server.
  */
 export async function getUsersWhoLikedMe(myId: string): Promise<UserProfile[]> {
-  const [likedMe, mine, me] = await Promise.all([
+  const [likedMe, me] = await Promise.all([
     getDocs(query(collection(db, 'swipes'), where('liked', 'array-contains', myId))),
-    mySwipes(myId),
     getUser(myId),
   ]);
-  const already = new Set(mine.liked);
-  const users = await loadUsers(likedMe.docs.map((d) => d.id).filter((id) => id !== myId && !already.has(id)));
+  const users = await loadUsers(likedMe.docs.map((d) => d.id).filter((id) => id !== myId));
   // Hide people from the other mode (for example, someone who liked you before either of you switched to friend mode).
   return me ? users.filter((u) => isCompatible(me, u)) : users;
 }
@@ -58,8 +62,18 @@ export async function likeBack(myId: string, otherId: string): Promise<string> {
   return ensureMatch(myId, otherId);
 }
 
-export const unlikeUser = (myId: string, otherId: string) =>
-  updateDoc(doc(db, 'swipes', myId), { liked: arrayRemove(otherId) });
+/** Removes my like only (it is not a pass). Reads the document back so a write that did not stick shows as an error. */
+export async function unlikeUser(myId: string, otherId: string): Promise<void> {
+  const ref = doc(db, 'swipes', myId);
+  const before = ((await getDoc(ref)).data()?.liked as string[] | undefined) ?? [];
+  await setDoc(ref, { liked: arrayRemove(otherId) }, { merge: true });
+  const after = ((await getDoc(ref)).data()?.liked as string[] | undefined) ?? [];
+  if (__DEV__) {
+    // Compare "project" and the document path with what you see in the Firebase console.
+    console.log('[unlike]', { project: db.app.options.projectId, path: ref.path, other: otherId, before, after });
+  }
+  if (after.includes(otherId)) throw new Error('Unlike did not save');
+}
 
 export const unpassUser = (myId: string, otherId: string) =>
   updateDoc(doc(db, 'swipes', myId), { passed: arrayRemove(otherId) });
