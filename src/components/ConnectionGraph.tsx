@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import * as ScreenOrientation from 'expo-screen-orientation';
+import { ActivityIndicator, Modal, PanResponder, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../constants/theme';
 import { GraphData, loadGraph } from '../services/connections';
@@ -54,17 +55,43 @@ function layout(data: GraphData): { placed: Placed[]; width: number; height: num
 }
 
 /** The graph itself: pictures only; long press a picture to see the username, tap it to open the profile. */
-function GraphCanvas({ data, scale, height, centerId }: { data: GraphData; scale: number; height: number; centerId: string }) {
+function GraphCanvas({ data, scale, height, centerId, recenter }: { data: GraphData; scale: number; height: number; centerId: string; recenter: number }) {
   const t = useTheme();
   const router = useRouter();
   const [label, setLabel] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [viewW, setViewW] = useState(0);
+  const [view, setView] = useState({ w: 0, h: height });
+  // Drag to move the graph around (no scroll bars). The offset is clamped so the graph can't be lost off-screen.
+  const [off, setOff] = useState({ x: 0, y: 0 });
+  const offRef = useRef(off);
+  offRef.current = off;
+  const start = useRef({ x: 0, y: 0 });
+  useEffect(() => setOff({ x: 0, y: 0 }), [recenter]); // the "back to the middle" button
+  const sizeRef = useRef({ W: 0, H: 0, vw: 0, vh: 0 });
   const g = useMemo(() => layout(data), [data]);
   const W = g.width * scale;
   const H = g.height * scale;
   const at = useMemo(() => new Map(g.placed.map((p) => [p.uid, p])), [g]);
   const size = NODE * scale;
+  sizeRef.current = { W, H, vw: view.w, vh: view.h };
+  const pan = useMemo(() => {
+    const clamp = (v: number, content: number, viewport: number) => {
+      const limit = Math.max(content, viewport) / 2;
+      return Math.max(-limit, Math.min(limit, v));
+    };
+    return PanResponder.create({
+      // Take over only once the finger has really moved, so a tap or a long press on a picture still works.
+      onMoveShouldSetPanResponderCapture: (_e, g) => Math.abs(g.dx) + Math.abs(g.dy) > 6,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: () => {
+        start.current = offRef.current;
+      },
+      onPanResponderMove: (_e, g) => {
+        const { W: w, H: h, vw, vh } = sizeRef.current;
+        setOff({ x: clamp(start.current.x + g.dx, w, vw), y: clamp(start.current.y + g.dy, h, vh) });
+      },
+    });
+  }, []);
 
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
   function showLabel(uid: string) {
@@ -74,68 +101,65 @@ function GraphCanvas({ data, scale, height, centerId }: { data: GraphData; scale
   }
 
   return (
-    <ScrollView
-      style={{ height }}
-      nestedScrollEnabled
-      onLayout={(e) => setViewW(e.nativeEvent.layout.width)}
-      contentContainerStyle={{ minHeight: height, justifyContent: 'center' }}
+    <View
+      {...pan.panHandlers}
+      style={[{ height, overflow: 'hidden' }, Platform.OS === 'web' ? ({ cursor: 'grab', userSelect: 'none', touchAction: 'none' } as object) : null]}
+      onLayout={(e) => setView({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
     >
-      <ScrollView horizontal nestedScrollEnabled contentContainerStyle={{ minWidth: viewW, justifyContent: 'center' }}>
-        <View style={{ width: W, height: H }}>
-          {data.edges.map(([a, b]) => {
-            const p = at.get(a);
-            const q = at.get(b);
-            if (!p || !q) return null;
-            const x1 = p.x * scale;
-            const y1 = p.y * scale;
-            const x2 = q.x * scale;
-            const y2 = q.y * scale;
-            const len = Math.hypot(x2 - x1, y2 - y1);
-            return (
-              <View
-                key={`${a}-${b}`}
-                pointerEvents="none"
-                style={{
-                  position: 'absolute',
-                  left: (x1 + x2) / 2 - len / 2,
-                  top: (y1 + y2) / 2 - 1,
-                  width: len,
-                  height: 2,
-                  borderRadius: 1,
-                  backgroundColor: t.outline,
-                  transform: [{ rotate: `${Math.atan2(y2 - y1, x2 - x1)}rad` }],
-                }}
-              />
-            );
-          })}
-          {g.placed.map((p) => {
-            const profile = data.profiles[p.uid];
-            const isCenter = p.uid === centerId;
-            return (
-              <Pressable
-                key={p.uid}
-                onPress={() => !isCenter && router.push(`/profile/${p.uid}`)}
-                onLongPress={() => showLabel(p.uid)}
-                delayLongPress={350}
-                accessibilityLabel={profile?.username}
-                style={{ position: 'absolute', left: p.x * scale - size / 2, top: p.y * scale - size / 2 }}
-              >
-                <View style={{ borderRadius: size, borderWidth: isCenter ? 3 : 2, borderColor: isCenter ? t.primary : t.outline, backgroundColor: t.surface }}>
-                  <Avatar uri={profile?.photoUrl} name={profile?.username} size={size - (isCenter ? 6 : 4)} />
+      <View style={{ position: 'absolute', width: W, height: H, left: view.w / 2 - W / 2 + off.x, top: view.h / 2 - H / 2 + off.y }}>
+        {data.edges.map(([a, b]) => {
+          const p = at.get(a);
+          const q = at.get(b);
+          if (!p || !q) return null;
+          const x1 = p.x * scale;
+          const y1 = p.y * scale;
+          const x2 = q.x * scale;
+          const y2 = q.y * scale;
+          const len = Math.hypot(x2 - x1, y2 - y1);
+          return (
+            <View
+              key={`${a}-${b}`}
+              pointerEvents="none"
+              style={{
+                position: 'absolute',
+                left: (x1 + x2) / 2 - len / 2,
+                top: (y1 + y2) / 2 - 1,
+                width: len,
+                height: 2,
+                borderRadius: 1,
+                backgroundColor: t.outline,
+                transform: [{ rotate: `${Math.atan2(y2 - y1, x2 - x1)}rad` }],
+              }}
+            />
+          );
+        })}
+        {g.placed.map((p) => {
+          const profile = data.profiles[p.uid];
+          const isCenter = p.uid === centerId;
+          return (
+            <Pressable
+              key={p.uid}
+              onPress={() => !isCenter && router.push(`/profile/${p.uid}`)}
+              onLongPress={() => showLabel(p.uid)}
+              delayLongPress={350}
+              accessibilityLabel={profile?.username}
+              style={{ position: 'absolute', left: p.x * scale - size / 2, top: p.y * scale - size / 2 }}
+            >
+              <View style={{ borderRadius: size, borderWidth: isCenter ? 3 : 2, borderColor: isCenter ? t.primary : t.outline, backgroundColor: t.surface }}>
+                <Avatar uri={profile?.photoUrl} name={profile?.username} size={size - (isCenter ? 6 : 4)} />
+              </View>
+              {label === p.uid && (
+                <View style={[styles.tip, { backgroundColor: t.text, bottom: size + 4 }]}>
+                  <Text style={{ color: t.background, fontSize: 12, fontWeight: '700' }} numberOfLines={1}>
+                    {profile?.username}
+                  </Text>
                 </View>
-                {label === p.uid && (
-                  <View style={[styles.tip, { backgroundColor: t.text, bottom: size + 4 }]}>
-                    <Text style={{ color: t.background, fontSize: 12, fontWeight: '700' }} numberOfLines={1}>
-                      {profile?.username}
-                    </Text>
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
-      </ScrollView>
-    </ScrollView>
+              )}
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
@@ -149,7 +173,16 @@ export function ConnectionGraph({ viewerId, centerId, username, reloadKey = 0 }:
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [data, setData] = useState<GraphData | null>(null);
   const [scale, setScale] = useState(1);
+  const [recenter, setRecenter] = useState(0);
   const [full, setFull] = useState(false);
+
+  // Full screen on a phone turns the screen to landscape (more room for the graph) and back when closed.
+  // The web / desktop build has nothing to rotate.
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    if (full) ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => undefined);
+    else ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => undefined);
+  }, [full]);
 
   const load = useCallback(async () => {
     setState('loading');
@@ -188,12 +221,13 @@ export function ConnectionGraph({ viewerId, centerId, username, reloadKey = 0 }:
           </Text>
         </View>
       )}
-      {hasGraph && data && <GraphCanvas data={data} scale={scale} height={h} centerId={centerId} />}
+      {hasGraph && data && <GraphCanvas data={data} scale={scale} height={h} centerId={centerId} recenter={recenter} />}
     </>
   );
 
   const controls = (inModal: boolean) => (
     <View style={styles.controls}>
+      <Ctl icon="locate" label="Back to the center" onPress={() => { setRecenter((n) => n + 1); setScale(1); }} disabled={!hasGraph} />
       <Ctl icon="add" label="Zoom in" onPress={() => zoom(0.25)} disabled={!hasGraph} />
       <Ctl icon="remove" label="Zoom out" onPress={() => zoom(-0.25)} disabled={!hasGraph} />
       <Ctl icon={inModal ? 'contract' : 'expand'} label={inModal ? 'Close full screen' : 'Full screen'} onPress={() => setFull(!inModal)} disabled={!hasGraph && !inModal} />
@@ -211,13 +245,13 @@ export function ConnectionGraph({ viewerId, centerId, username, reloadKey = 0 }:
         Tap a picture to open the profile, press and hold to see the username.
       </Text>
 
-      <Modal visible={full} animationType="fade" onRequestClose={() => setFull(false)}>
+      <Modal visible={full} animationType="fade" supportedOrientations={['portrait', 'landscape']} onRequestClose={() => setFull(false)}>
         <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
           <View style={[styles.head, { paddingHorizontal: 16 }]}>
             <Text style={{ color: t.text, fontWeight: '700', fontSize: 18 }}>Connections</Text>
             {controls(true)}
           </View>
-          {body(winH - 140)}
+          {body(Math.max(180, winH - 90))}
         </SafeAreaView>
       </Modal>
     </View>

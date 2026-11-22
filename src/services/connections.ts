@@ -74,17 +74,17 @@ export async function syncMyConnections(myId: string): Promise<void> {
 
 /**
  * The graph for `centerId` as seen by `viewerId`.
- * - The person in the middle shows their matches only if they chose visible (the viewer always sees their own).
- * - Their matches (level 1) always appear, since the middle person chose to show them.
- * - A level 1 person's own other matches (level 2) and the lines between matches only appear when the people
- *   involved are visible: a hidden person never shows up behind someone else and their lines are not drawn.
+ * A line between two people is drawn when
+ *  - one of them is the viewer and the other is one of the viewer's own matches (the viewer's own data, always shown), or
+ *  - both people chose to show their connections and one of their published lists contains the other.
+ * So someone who has not published never gets a line to anybody except the viewer, and a person is only reachable in
+ * the graph through such lines. Level 1 is the middle person's lines, level 2 the lines of those people.
  */
 export async function loadGraph(viewerId: string, centerId: string): Promise<GraphData> {
   const cache = new Map<string, Conn>();
-  let own: string[] | null = null;
-  const getOwn = async () => (own ??= await getMyActivePartners(viewerId));
+  const own = new Set(await getMyActivePartners(viewerId));
   const conn = async (uid: string): Promise<Conn> => {
-    if (uid === viewerId) return { visible: true, partners: await getOwn() }; // I always see my own data
+    if (uid === viewerId) return { visible: true, partners: [...own] }; // I always see my own data
     let c = cache.get(uid);
     if (!c) {
       c = await readConn(uid);
@@ -92,58 +92,49 @@ export async function loadGraph(viewerId: string, centerId: string): Promise<Gra
     }
     return c;
   };
-
-  const center = await conn(centerId);
-  const nodes: GraphNode[] = [{ uid: centerId, level: 0 }];
-  const edges = new Map<string, [string, string]>();
-  const addEdge = (a: string, b: string) => {
-    if (a !== b) edges.set([a, b].sort().join('|'), [a, b]);
+  const allowed = async (u: string, v: string): Promise<boolean> => {
+    if (u === v) return false;
+    if (u === viewerId) return own.has(v);
+    if (v === viewerId) return own.has(u);
+    const [cu, cv] = await Promise.all([conn(u), conn(v)]);
+    return cu.visible && cv.visible && (cu.partners.includes(v) || cv.partners.includes(u));
   };
 
-  let hidden = false;
-  let level1: string[] = center.visible ? center.partners.slice(0, MAX_LEVEL1) : [];
-  if (!center.visible) {
-    hidden = true;
-    // I can still see my own match with them.
-    if ((await getOwn()).includes(centerId)) level1 = [viewerId];
-  }
+  const nodes: GraphNode[] = [{ uid: centerId, level: 0 }];
+  const inGraph = new Set([centerId]);
+  const edges = new Map<string, [string, string]>();
+  const addEdge = (a: string, b: string) => edges.set([a, b].sort().join('|'), [a, b]);
 
-  level1 = level1.filter((id) => id !== centerId);
-  level1.forEach((id) => {
-    nodes.push({ uid: id, level: 1 });
-    addEdge(centerId, id);
-  });
-
-  if (center.visible || level1.length > 0) {
-    const l1Conns = await Promise.all(level1.map(async (id) => [id, await conn(id)] as const));
-    const inL1 = new Set(level1);
-    const candidates: { parent: string; id: string }[] = [];
-
-    for (const [p, c] of l1Conns) {
-      if (!c.visible) continue; // a hidden person shows no other matches and no lines
-      for (const q of c.partners) {
-        if (q === centerId || q === p) continue;
-        candidates.push({ parent: p, id: q });
-      }
+  // Level 1: the middle person's lines.
+  const center = await conn(centerId);
+  const candidates1 = new Set(center.partners);
+  if (centerId !== viewerId && own.has(centerId)) candidates1.add(viewerId); // my own match with them
+  const level1: string[] = [];
+  for (const v of [...candidates1].slice(0, MAX_LEVEL1 * 2)) {
+    if (level1.length >= MAX_LEVEL1) break;
+    if (await allowed(centerId, v)) {
+      level1.push(v);
+      inGraph.add(v);
+      nodes.push({ uid: v, level: 1 });
+      addEdge(centerId, v);
     }
+  }
+  const hidden = centerId !== viewerId && !center.visible;
 
-    // Only visible people appear or get a line, apart from the middle person's own matches (level 1).
-    const uniq = [...new Set(candidates.map((c) => c.id))].filter((id) => !inL1.has(id)).slice(0, MAX_LEVEL2 * 2);
-    const l2Conns = new Map(await Promise.all(uniq.map(async (id) => [id, await conn(id)] as const)));
-    const l1Map = new Map(l1Conns);
-    const added = new Set<string>();
-
-    for (const { parent, id } of candidates) {
-      const target = inL1.has(id) ? l1Map.get(id) : l2Conns.get(id);
-      if (!target?.visible) continue;
-      if (!inL1.has(id)) {
-        if (!added.has(id)) {
-          if (added.size >= MAX_LEVEL2) continue;
-          added.add(id);
-          nodes.push({ uid: id, level: 2, parent });
-        }
+  // Level 2: lines of the level 1 people (and lines between level 1 people).
+  let level2Count = 0;
+  for (const p of level1) {
+    const c = await conn(p);
+    for (const q of c.partners) {
+      if (q === centerId || q === p) continue;
+      if (!inGraph.has(q) && level2Count >= MAX_LEVEL2) continue;
+      if (!(await allowed(p, q))) continue;
+      if (!inGraph.has(q)) {
+        inGraph.add(q);
+        level2Count++;
+        nodes.push({ uid: q, level: 2, parent: p });
       }
-      addEdge(parent, id);
+      addEdge(p, q);
     }
   }
 
@@ -152,7 +143,7 @@ export async function loadGraph(viewerId: string, centerId: string): Promise<Gra
   const present = new Set(Object.keys(profiles));
   return {
     nodes: nodes.filter((n) => present.has(n.uid)),
-    edges: [...edges.values()].filter(([a, b]) => present.has(a) && present.has(b)),
+    edges: [...edges.values()].filter(([x, y]) => present.has(x) && present.has(y)),
     profiles,
     hidden,
   };
