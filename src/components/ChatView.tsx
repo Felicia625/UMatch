@@ -96,7 +96,8 @@ export function ChatView({ matchId, embedded = false, onClose }: { matchId: stri
 
   const pinned = useMemo(() => messages.filter((m) => m.pinned), [messages]);
   // Inverted list: newest first, so the chat opens at the bottom and the keyboard behaves.
-  const regular = useMemo(() => messages.filter((m) => !m.pinned).reverse(), [messages]);
+  // Pinned messages stay in the conversation too (marked with a pin) and are also listed in the bar at the top.
+  const regular = useMemo(() => [...messages].reverse(), [messages]);
 
   function onSend() {
     const body = text.trim();
@@ -264,6 +265,7 @@ function Bubble({ message, mine, onLongPress }: { message: Message; mine: boolea
         )}
         <Text style={{ color: textColor, fontSize: 16 }}>{message.text}</Text>
         <Text style={{ color: mine ? '#FFFFFFB3' : t.textSecondary, fontSize: 11, alignSelf: 'flex-end', marginTop: 2 }}>
+          {message.pinned ? '📌 ' : ''}
           {message.edited ? 'edited · ' : ''}
           {formatTime(message.timestamp)}
         </Text>
