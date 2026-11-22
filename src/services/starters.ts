@@ -12,7 +12,7 @@ export interface Starters {
 }
 
 const AI_ENABLED_KEY = 'ai_starters_enabled';
-const AI_DAILY_LIMIT = 5; // AI requests per person per day, to protect the shared free quota
+const AI_DAILY_LIMIT = 30; // AI requests per person per day, to protect the shared free quota
 
 export async function getAiStartersEnabled(): Promise<boolean> {
   try {
@@ -21,7 +21,7 @@ export async function getAiStartersEnabled(): Promise<boolean> {
     return true;
   }
 }
-export const setAiStartersEnabled = (value: boolean) => AsyncStorage.setItem(AI_ENABLED_KEY, String(value)).catch(() => {});
+export const setAiStartersEnabled = (value: boolean) => AsyncStorage.setItem(AI_ENABLED_KEY, String(value)).catch(() => { });
 
 async function takeQuota(myId: string): Promise<boolean> {
   const key = `starters_quota:${myId}:${new Date().toISOString().slice(0, 10)}`;
@@ -118,5 +118,5 @@ export async function loadStarters(
       console.warn('AI conversation starters unavailable, using the built-in ideas', e);
     }
   }
-  AsyncStorage.setItem(cacheKey, JSON.stringify(current)).catch(() => {});
+  AsyncStorage.setItem(cacheKey, JSON.stringify(current)).catch(() => { });
 }
