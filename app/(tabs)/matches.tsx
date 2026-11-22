@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
-import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Avatar } from '../../src/components/Avatar';
+import { ChatView } from '../../src/components/ChatView';
 import { TextField } from '../../src/components/ui';
+import { WIDE_SCREEN } from '../../src/constants/layout';
 import { useTheme } from '../../src/constants/theme';
 import { MatchRow, MatchStatus, useMatches } from '../../src/hooks/useMatches';
 import { useAuth } from '../../src/providers/AuthProvider';
@@ -28,6 +30,15 @@ export default function Matches() {
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+
+  // Wide screens: list on the left, the selected chat on the right. Phones keep opening the chat full screen.
+  const { width } = useWindowDimensions();
+  const wide = width >= WIDE_SCREEN;
+  const { open: openParam } = useLocalSearchParams<{ open?: string }>();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof openParam === 'string') setSelectedId(openParam);
+  }, [openParam]);
 
   // The favourites toggle lives in the title bar.
   const navigation = useNavigation();
@@ -65,7 +76,8 @@ export default function Matches() {
     if (r.status === 'blocked') return Alert.alert('You have blocked this user');
     if (r.blockedByPartner) return Alert.alert('You cannot chat with this user');
     if (r.status === 'inactive') return Alert.alert('Match no longer valid');
-    router.push(`/chat/${r.match.id}`);
+    if (wide) setSelectedId(r.match.id);
+    else router.push(`/chat/${r.match.id}`);
   }
 
   async function toggleFavorite(r: MatchRow) {
@@ -105,7 +117,7 @@ export default function Matches() {
     setRefreshing(false);
   }
 
-  return (
+  const list = (
     <View style={{ flex: 1, backgroundColor: t.background }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
         <TextField placeholder="Search matches" value={search} onChangeText={setSearch} />
@@ -146,7 +158,10 @@ export default function Matches() {
             </View>
           }
           renderItem={({ item }) => (
-            <Pressable onPress={() => open(item)} style={[styles.row, { borderColor: t.outline }]}>
+            <Pressable
+              onPress={() => open(item)}
+              style={[styles.row, { borderColor: t.outline }, wide && selectedId === item.match.id && { backgroundColor: t.tint }]}
+            >
               <Pressable onPress={() => router.push(`/profile/${item.partner.uid}`)} accessibilityLabel="View profile">
                 <Avatar uri={item.partner.photoUrl} name={item.partner.username} size={56} />
               </Pressable>
@@ -173,6 +188,22 @@ export default function Matches() {
           )}
         />
       )}
+    </View>
+  );
+
+  if (!wide) return list;
+  return (
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: t.background }}>
+      <View style={{ width: 380, borderRightWidth: StyleSheet.hairlineWidth, borderColor: t.outline }}>{list}</View>
+      <View style={{ flex: 1 }}>
+        {selectedId ? (
+          <ChatView key={selectedId} matchId={selectedId} embedded onClose={() => setSelectedId(null)} />
+        ) : (
+          <View style={styles.empty}>
+            <Text style={{ color: t.textSecondary, fontSize: 16 }}>Select a conversation to start chatting</Text>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
