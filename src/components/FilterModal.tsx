@@ -5,7 +5,7 @@ import { Preferences } from '../types';
 import { PreferenceFields } from './PreferenceFields';
 import { Button } from './ui';
 
-/** The Discover filter IS the "I'm looking for" setting: it opens with the saved preferences and Apply saves them. */
+/** The Discover filter IS the "I want to connect with" setting: it opens with the saved preferences and Apply saves them. */
 export function FilterModal({
   visible,
   value,
@@ -28,7 +28,7 @@ export function FilterModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={[styles.dialog, { backgroundColor: t.surface }]}>
-          <Text style={[styles.title, { color: t.text }]}>I'm looking for</Text>
+          <Text style={[styles.title, { color: t.text }]}>I want to connect with</Text>
           <Text style={{ color: t.textSecondary, marginBottom: 12 }}>
             Same settings as Edit Profile. They are saved when you apply.
           </Text>

@@ -50,7 +50,7 @@ export async function loadCandidates(me: UserProfile): Promise<UserProfile[]> {
   const yearPref = me.preference.yearPreferences;
   const majors = me.preference.majorPreferences;
 
-  // Friend mode: other friend-mode users of any gender. Dating mode: the opposite gender (friend-mode users are removed below).
+  // Friend mode: other friend-mode users of any gender. Default mode: the opposite gender (friend-mode users are removed below).
   const constraints: QueryConstraint[] = me.friendFirst
     ? [where('friendFirst', '==', true)]
     : [where('gender', '==', oppositeGender(me.gender))];

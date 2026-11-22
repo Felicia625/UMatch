@@ -7,7 +7,7 @@ import { useTheme } from '../src/constants/theme';
 // the registration check can't disagree again. This screen sits outside the (auth) group because it is opened from
 // both Register (signed out) and Settings (signed in).
 const SECTIONS = [
-  ['1. Acceptance of Terms', 'By using UMNDatingApp, you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our service.'],
+  ['1. Acceptance of Terms', 'By using UMatch, you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our service.'],
   ['2. Eligibility', `You must be a current student of Universitas Multimedia Nusantara (UMN) and at least ${MIN_AGE} years old to use this service.`],
   ['3. User Conduct', 'Users must maintain respectful behavior, provide accurate information, and not engage in harassment, spam, or inappropriate content sharing.'],
   ['4. Privacy and Data', 'We collect and process your data in accordance with our Privacy Policy. Your profile information is visible to other UMN students using the app. Conversation-starter suggestions may send part of a profile (bio, major and batch, never names or emails) to an AI service to write the suggestion; you can turn this off in Settings.'],

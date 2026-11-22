@@ -158,9 +158,9 @@ export default function Home() {
   const empty = (
     <View style={styles.center}>
       <Text style={{ color: t.text, fontSize: 18, fontWeight: '700' }}>No profiles to show</Text>
-      {prefs && <Text style={{ color: t.text, textAlign: 'center', marginTop: 8 }}>Looking for: {describeCriteria(prefs, friendMode)}</Text>}
+      {prefs && <Text style={{ color: t.text, textAlign: 'center', marginTop: 8 }}>Showing: {describeCriteria(prefs, friendMode)}</Text>}
       <Text style={{ color: t.textSecondary, textAlign: 'center', marginVertical: 8 }}>
-        Change who you're looking for with the filter button at the top. Profiles you already liked or passed are not shown again.
+        Change who you want to connect with using the filter button at the top. Profiles you already liked or passed are not shown again.
       </Text>
       <Button title="Refresh" onPress={load} />
     </View>
@@ -192,7 +192,7 @@ export default function Home() {
             <Ionicons name="information" size={24} color={t.textSecondary} />
           </Pressable>
           <Pressable onPress={() => deck.current?.swipe('right')} style={[styles.round, { backgroundColor: t.surface }]} accessibilityLabel="Like">
-            <Ionicons name="heart" size={30} color={t.primary} />
+            <Ionicons name="thumbs-up" size={30} color={t.primary} />
           </Pressable>
         </View>
       )}

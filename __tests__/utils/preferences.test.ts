@@ -52,11 +52,11 @@ describe('isCompatible (who can see whom)', () => {
   const woman = makeUser({ uid: 'w1', gender: 'F' });
   const otherMan = makeUser({ uid: 'm2', gender: 'M' });
 
-  it('dating mode: opposite genders can see each other', () => {
+  it('default mode: opposite genders can see each other', () => {
     expect(isCompatible(man, woman)).toBe(true);
     expect(isCompatible(woman, man)).toBe(true);
   });
-  it('dating mode: same gender cannot', () => {
+  it('default mode: same gender cannot', () => {
     expect(isCompatible(man, otherMan)).toBe(false);
   });
   it('friend mode: friend-first users can see each other, whatever the gender', () => {
@@ -66,7 +66,7 @@ describe('isCompatible (who can see whom)', () => {
     expect(isCompatible(f1, f2)).toBe(true);
     expect(isCompatible(f1, f3)).toBe(true);
   });
-  it('friend mode and dating mode never see each other, in either direction', () => {
+  it('friend mode and default mode never see each other, in either direction', () => {
     const friend = makeUser({ uid: 'f1', gender: 'M', friendFirst: true });
     const dater = makeUser({ uid: 'd1', gender: 'F', friendFirst: false });
     expect(isCompatible(friend, dater)).toBe(false);

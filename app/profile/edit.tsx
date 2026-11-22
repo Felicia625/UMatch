@@ -161,7 +161,7 @@ export default function EditProfile() {
           <TextField value={loaded.email} editable={false} style={{ opacity: 0.6 }} />
           <TextField value={GENDERS.find((g) => g.code === loaded.gender)?.label ?? ''} editable={false} style={{ opacity: 0.6 }} />
 
-          <Text style={[styles.section, { color: t.primary }]}>I'm looking for</Text>
+          <Text style={[styles.section, { color: t.primary }]}>I want to connect with</Text>
           <PreferenceFields value={prefs} onChange={setPrefs} />
 
           <Button title="Save" onPress={onSave} loading={saving} />

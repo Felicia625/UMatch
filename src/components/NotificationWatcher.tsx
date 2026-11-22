@@ -63,7 +63,7 @@ export function NotificationWatcher() {
             });
           } else {
             await notifyLocal({
-              title: "It's a match!",
+              title: "You're connected!",
               body: `You and ${partner.username} liked each other. Say hi!`,
               matchId: event.match.id,
             });

@@ -21,7 +21,7 @@ export function MatchModal({
     <Modal visible={!!user} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={[styles.dialog, { backgroundColor: t.surface }]}>
-          <Text style={[styles.title, { color: t.primary }]}>{friend ? "You're now friends!" : "It's a match!"}</Text>
+          <Text style={[styles.title, { color: t.primary }]}>{friend ? "You're now friends!" : "You're connected!"}</Text>
           <Text style={{ color: t.textSecondary, marginBottom: 16 }}>You and {user?.username} liked each other.</Text>
           {user?.photoUrl ? (
             <Image source={{ uri: user.photoUrl }} style={styles.photo} contentFit="cover" />

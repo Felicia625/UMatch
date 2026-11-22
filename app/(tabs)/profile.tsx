@@ -117,8 +117,8 @@ export default function Profile() {
 
         <View style={styles.buttons}>
           <View style={{ flexDirection: 'row', gap: 12 }}>
-            <PillButton style={{ flex: 1 }} label="WHO LIKED YOU" icon="heart" color={t.accent} onPress={() => router.push('/lists/liked-me')} />
-            <PillButton style={{ flex: 1 }} label="MY LIKES" icon="heart" color={t.primary} onPress={() => router.push('/lists/my-likes')} />
+            <PillButton style={{ flex: 1 }} label="WHO LIKED YOU" icon="thumbs-up" color={t.accent} onPress={() => router.push('/lists/liked-me')} />
+            <PillButton style={{ flex: 1 }} label="MY LIKES" icon="thumbs-up" color={t.primary} onPress={() => router.push('/lists/my-likes')} />
           </View>
           <PillButton label="WHO YOU PASSED" icon="close" color={ORANGE} onPress={() => router.push('/lists/passed')} />
           <PillButton label="EDIT PROFILE" icon="create-outline" color={t.primary} onPress={() => router.push('/profile/edit')} />

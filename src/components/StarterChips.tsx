@@ -37,6 +37,7 @@ export function StarterChips({
 
   async function refresh() {
     setBusy(true);
+    setStarters(null); // hide the current ideas while the next ones are being made
     await loadStarters({ matchId, myId, partner, me: me.current, refresh: true }, setStarters);
     setBusy(false);
   }
@@ -48,13 +49,16 @@ export function StarterChips({
           Ide pembuka{starters?.source === 'ai' ? ' ✨' : ''}
         </Text>
         <Pressable onPress={refresh} disabled={busy} hitSlop={10} accessibilityLabel="Ide lain" style={{ opacity: busy ? 0.4 : 1 }}>
-          {busy && !starters ? (
-            <ActivityIndicator size="small" color={t.primary} />
-          ) : (
-            <Ionicons name="refresh" size={20} color={t.primary} />
-          )}
+          <Ionicons name="refresh" size={20} color={t.primary} />
         </Pressable>
       </View>
+
+      {busy && !starters && (
+        <View style={styles.loading}>
+          <ActivityIndicator size="small" color={t.primary} />
+          <Text style={{ color: t.textSecondary, fontSize: 13 }}>AI sedang menyiapkan ide pembuka…</Text>
+        </View>
+      )}
 
       {starters?.items.map((item) => (
         <Pressable
@@ -68,7 +72,7 @@ export function StarterChips({
       ))}
 
       <Text style={{ color: t.textSecondary, fontSize: 11, marginTop: 2 }}>
-        {busy && starters ? 'Mencari ide yang lebih cocok…' : 'Ketuk untuk memakai, lalu ubah sesukamu sebelum dikirim.'}
+        Ketuk untuk memakai, lalu ubah sesukamu sebelum dikirim.
       </Text>
     </View>
   );
@@ -77,5 +81,6 @@ export function StarterChips({
 const styles = StyleSheet.create({
   box: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 12, paddingVertical: 10, gap: 6 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  loading: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10 },
   chip: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
 });

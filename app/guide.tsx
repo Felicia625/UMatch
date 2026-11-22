@@ -5,7 +5,7 @@ import { useTheme } from '../src/constants/theme';
 // Text from res/layout/fragment_guide.xml. The last card no longer promises "Report inappropriate behavior":
 // the app has no report feature yet.
 const ITEMS = [
-  ['💕', 'Swipe to Match', "Swipe right to like, left to pass. When both users like each other, it's a match!"],
+  ['👋', 'Swipe to Connect', "Swipe right to like, left to pass. When both people like each other, you are connected and can start chatting!"],
   ['💬', 'Chat Features', 'Long press messages to reply, edit, pin, or delete. Use pinned messages for important info.'],
   ['👤', 'Profile Management', 'Edit your profile, set preferences, and manage your likes from the Profile tab.'],
   ['🤝', 'Friend First Mode', 'Turn on Friend first to meet people as friends. You will only see other people who also use it, and gender does not matter. Turn it off again anytime in your profile.'],

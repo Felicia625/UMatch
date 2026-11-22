@@ -33,10 +33,10 @@ describe('ruleBasedStarters', () => {
     expect(ruleBasedStarters(partner, me, 0).some((i) => i.includes('seangkatan'))).toBe(false);
   });
 
-  it('uses a friendly tone for friend mode and a match tone for dating mode', () => {
+  it('uses a friendly tone for friend mode and a general tone for the default mode', () => {
     const base = { major: undefined, bio: '' };
     expect(ruleBasedStarters(makeUser({ ...base, friendFirst: true }), null, 0).some((i) => i.includes('kenalan'))).toBe(true);
-    expect(ruleBasedStarters(makeUser({ ...base, friendFirst: false }), null, 0).some((i) => i.includes('match'))).toBe(true);
+    expect(ruleBasedStarters(makeUser({ ...base, friendFirst: false }), null, 0).some((i) => i.includes('terhubung'))).toBe(true);
   });
 
   it('gives a different set when the round changes', () => {

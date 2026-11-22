@@ -19,7 +19,7 @@ export async function uploadProfilePhoto(base64: string): Promise<string> {
   const form = new FormData();
   form.append('file', `data:image/jpeg;base64,${base64}`);
   form.append('upload_preset', preset);
-  form.append('folder', 'dating_app');
+  form.append('folder', 'umatch');
 
   const settings = `cloud "${cloudName}", preset "${preset}"`;
   let res: Response;

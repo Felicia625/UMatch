@@ -17,8 +17,8 @@ export function FriendModeSwitch({
       <View style={{ flex: 1 }}>
         <Text style={{ color: t.text, fontSize: 16, fontWeight: '700' }}>🤝 Friend first</Text>
         <Text style={{ color: t.textSecondary, marginTop: 4, lineHeight: 19 }}>
-          Looking for friends, not only a partner? You will only see, and be seen by, other people who also turned this on, and
-          gender doesn't matter.
+          Want to connect as friends? You will only see, and be seen by, other people who also turned this on, and gender
+          doesn't matter.
         </Text>
       </View>
       <Switch

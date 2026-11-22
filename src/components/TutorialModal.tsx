@@ -5,8 +5,8 @@ import { Button } from './ui';
 
 // Steps from MainActivity.showTutorial()
 const STEPS: [string, string][] = [
-  ['Welcome to UMatch!', 'Swipe right to like, left to pass on potential matches.'],
-  ['Find Your Matches', 'Check your matches and start conversations in the Matches tab.'],
+  ['Welcome to UMatch!', 'Swipe right to like, left to pass on people you would like to connect with.'],
+  ['Your Connections', 'Find the people you are connected with and start conversations in the Matches tab.'],
   ['Your Profile', 'Edit your profile, view likes, and manage settings from the Profile tab.'],
   ['Need Help?', 'Tap the help button at the top of Home or Profile anytime for the guide.'],
 ];

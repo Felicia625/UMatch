@@ -39,8 +39,8 @@ const FRIEND_IDEAS = [
   'Halo! Kegiatan apa yang lagi kamu seneng-senengin sekarang?',
 ];
 
-const DATING_IDEAS = [
-  'Hai! Senang bisa match sama kamu. Weekend biasanya kamu ngapain?',
+const GENERAL_IDEAS = [
+  'Hai! Senang bisa terhubung sama kamu. Weekend biasanya kamu ngapain?',
   'Halo! Kalau lagi senggang, kamu lebih suka di rumah atau jalan-jalan?',
   'Hai! Ada rekomendasi tempat makan enak di sekitar kampus?',
   'Halo! Cerita dong, hal apa yang lagi bikin kamu semangat belakangan ini?',
@@ -55,7 +55,7 @@ export function ruleBasedStarters(partner: UserProfile, me: UserProfile | null, 
   if (me && partner.schoolyear && partner.schoolyear === me.schoolyear) {
     specific.push('Kita seangkatan, ya! Semester ini kuliahmu lagi padat nggak?');
   }
-  const pool = [...specific, ...(partner.friendFirst ? FRIEND_IDEAS : DATING_IDEAS)];
+  const pool = [...specific, ...(partner.friendFirst ? FRIEND_IDEAS : GENERAL_IDEAS)];
   const start = (round * 3) % pool.length;
   return Array.from({ length: 3 }, (_, i) => pool[(start + i) % pool.length]);
 }

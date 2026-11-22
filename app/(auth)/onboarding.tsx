@@ -10,12 +10,12 @@ export default function Onboarding() {
     <SafeAreaView style={styles.container}>
       <View style={styles.center}>
         <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.subtitle}>Find your perfect match</Text>
-        <Text style={styles.body}>Connect with people around you</Text>
+        <Text style={styles.subtitle}>Connect with fellow UMN students</Text>
+        <Text style={styles.body}>Meet and chat with people around campus</Text>
       </View>
       <View style={styles.footer}>
         <Button title="Get Started" onPress={() => router.push('/login')} />
-        <Text style={styles.hint}>Start your journey to find love</Text>
+        <Text style={styles.hint}>Start connecting with your campus</Text>
       </View>
     </SafeAreaView>
   );
