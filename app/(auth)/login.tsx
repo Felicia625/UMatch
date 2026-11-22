@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button, PasswordField, Screen, TextField } from '../../src/components/ui';
+import { EMAIL_DOMAIN } from '../../src/constants/options';
 import { useTheme } from '../../src/constants/theme';
 import {
   friendlyAuthError,
@@ -60,7 +61,8 @@ export default function Login() {
       <Text style={[styles.title, { color: t.text }]}>Welcome Back</Text>
       <Text style={[styles.subtitle, { color: t.textSecondary }]}>Sign in to continue</Text>
 
-      <TextField placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
+      <Text style={[styles.label, { color: t.text }]}>UMN Student Email</Text>
+      <TextField placeholder={`yourname${EMAIL_DOMAIN}`} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
       <PasswordField placeholder="Password" value={password} onChangeText={setPassword} />
 
       <Pressable onPress={() => { setResetEmail(email); setForgotOpen(true); }}>
@@ -78,7 +80,7 @@ export default function Login() {
           <View style={[styles.dialog, { backgroundColor: t.surface }]}>
             <Text style={[styles.dialogTitle, { color: t.text }]}>Reset Password</Text>
             <Text style={{ color: t.textSecondary, marginBottom: 12 }}>Enter your email to receive a reset link.</Text>
-            <TextField placeholder="Email" value={resetEmail} onChangeText={setResetEmail} autoCapitalize="none" keyboardType="email-address" />
+            <TextField placeholder="UMN Student Email" value={resetEmail} onChangeText={setResetEmail} autoCapitalize="none" keyboardType="email-address" />
             <Button title="Send reset link" onPress={onReset} />
             <Button title="Cancel" variant="ghost" onPress={() => setForgotOpen(false)} />
           </View>
@@ -89,6 +91,7 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 6 },
   title: { fontSize: 28, fontWeight: '800', marginTop: 24 },
   subtitle: { fontSize: 16, marginBottom: 24 },
   link: { textAlign: 'right', marginBottom: 12, fontWeight: '600' },

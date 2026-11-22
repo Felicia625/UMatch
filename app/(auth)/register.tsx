@@ -8,6 +8,7 @@ import { FriendModeSwitch } from '../../src/components/FriendModeSwitch';
 import { friendlyAuthError, register } from '../../src/services/auth';
 import { displayNameFromEmail } from '../../src/utils/names';
 import { useTheme } from '../../src/constants/theme';
+import { EMAIL_DOMAIN } from '../../src/constants/options';
 import { RegistrationForm, validateRegistration } from '../../src/utils/validation';
 
 const emptyForm: RegistrationForm = {
@@ -54,8 +55,10 @@ export default function Register() {
 
       <TextField placeholder="Username" value={form.username} onChangeText={set('username')} autoCapitalize="none" />
       <PasswordField placeholder="Password" value={form.password} onChangeText={set('password')} />
+      <Text style={{ color: t.textSecondary, fontSize: 12, marginTop: -4, marginBottom: 12 }}>At least 6 characters</Text>
+      <Text style={[styles.label, { color: t.text }]}>UMN Student Email</Text>
       <TextField
-        placeholder="Email"
+        placeholder={`yourname${EMAIL_DOMAIN}`}
         value={form.email}
         onChangeText={set('email')}
         autoCapitalize="none"
@@ -95,6 +98,7 @@ export default function Register() {
 
 const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '800', marginTop: 12 },
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 6 },
   subtitle: { fontSize: 16, marginBottom: 20 },
   termsRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 8 },
   box: { width: 24, height: 24, borderRadius: 6, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },

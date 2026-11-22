@@ -18,7 +18,7 @@ jest.mock('../../src/services/auth', () => ({
 const mockLogin = login as jest.Mock;
 
 async function fill(email: string, password: string) {
-  await fireEvent.changeText(screen.getByPlaceholderText('Email'), email);
+  await fireEvent.changeText(screen.getByPlaceholderText('yourname@student.umn.ac.id'), email);
   await fireEvent.changeText(screen.getByPlaceholderText('Password'), password);
 }
 

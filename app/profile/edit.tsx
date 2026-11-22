@@ -1,8 +1,8 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useNavigation, useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button, HEADER_EDGES, OptionPicker, Screen, TextField } from '../../src/components/ui';
 import { GENDERS, MAJORS, MIN_AGE, schoolYearOptions } from '../../src/constants/options';
 import { PersonPlaceholder } from '../../src/components/Avatar';
@@ -25,6 +25,7 @@ const majorOptions = MAJORS.map((m) => ({ value: m.code, label: m.label }));
 export default function EditProfile() {
   const t = useTheme();
   const router = useRouter();
+  const navigation = useNavigation();
   const { user } = useAuth();
 
   const [loaded, setLoaded] = useState<UserProfile | null>(null);
@@ -37,6 +38,39 @@ export default function EditProfile() {
   const [schoolyear, setSchoolyear] = useState('');
   const [major, setMajor] = useState('');
   const [prefs, setPrefs] = useState<Preferences>({ gender: 'F', yearPreferences: 'All', majorPreferences: [] });
+
+  // Unsaved changes: compare the form with what was loaded. Leaving (header back, Android back, swipe back) is
+  // intercepted and a dialog offers Keep Editing / Discard Changes. A modal is used instead of Alert.alert so it also
+  // works on the web build.
+  const dirty =
+    !!loaded &&
+    (!!photo ||
+      username !== loaded.username ||
+      bio !== loaded.bio ||
+      birthDate !== (loaded.birthDate ?? '') ||
+      friendFirst !== loaded.friendFirst ||
+      schoolyear !== loaded.schoolyear ||
+      major !== (loaded.major ?? '') ||
+      JSON.stringify(prefs) !== JSON.stringify(loaded.preference));
+  const skipGuard = useRef(false);
+  const [pendingLeave, setPendingLeave] = useState<{ type: string } | null>(null);
+
+  useEffect(
+    () =>
+      navigation.addListener('beforeRemove', (e) => {
+        if (skipGuard.current || !dirty) return;
+        e.preventDefault();
+        setPendingLeave(e.data.action);
+      }),
+    [navigation, dirty],
+  );
+
+  function discardAndLeave() {
+    if (!pendingLeave) return;
+    skipGuard.current = true;
+    navigation.dispatch(pendingLeave as never);
+    setPendingLeave(null);
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -119,6 +153,7 @@ export default function EditProfile() {
         patch.photoVerified = false;
       }
       await updateUser(user.uid, patch);
+      skipGuard.current = true;
       router.back();
     } catch (e) {
       Alert.alert('Failed to update profile', friendlyAuthError(e));
@@ -167,11 +202,26 @@ export default function EditProfile() {
           <Button title="Save" onPress={onSave} loading={saving} />
         </>
       )}
+
+      <Modal visible={!!pendingLeave} transparent animationType="fade" onRequestClose={() => setPendingLeave(null)}>
+        <View style={styles.backdrop}>
+          <View style={[styles.dialog, { backgroundColor: t.surface }]}>
+            <Text style={{ color: t.text, fontSize: 20, fontWeight: '800' }}>Discard changes?</Text>
+            <Text style={{ color: t.textSecondary, marginVertical: 12, lineHeight: 21 }}>
+              You have unsaved changes. If you leave now, they will be lost.
+            </Text>
+            <Button title="Keep Editing" onPress={() => setPendingLeave(null)} />
+            <Button title="Discard Changes" variant="outline" onPress={discardAndLeave} />
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   photo: { width: 140, height: 140, borderRadius: 70 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
+  dialog: { borderRadius: 16, padding: 20, width: '100%', maxWidth: 420, alignSelf: 'center' },
   section: { fontWeight: '700', marginTop: 12, marginBottom: 8 },
 });
