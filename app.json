@@ -28,7 +28,8 @@
       "expo-image-picker",
       "expo-splash-screen",
       "expo-image",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-font"
     ]
   }
 }
