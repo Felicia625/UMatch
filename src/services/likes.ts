@@ -53,13 +53,13 @@ export async function getPassedUsers(myId: string): Promise<UserProfile[]> {
 }
 
 /** Like someone back: records my like, clears any earlier pass, creates the match. Returns the match id. */
-export async function likeBack(myId: string, otherId: string): Promise<string> {
+export async function likeBack(myId: string, otherId: string, friend = false): Promise<string> {
   await setDoc(
     doc(db, 'swipes', myId),
     { liked: arrayUnion(otherId), passed: arrayRemove(otherId) },
     { merge: true },
   );
-  return ensureMatch(myId, otherId);
+  return ensureMatch(myId, otherId, friend);
 }
 
 /** Removes my like only (it is not a pass). Reads the document back so a write that did not stick shows as an error. */

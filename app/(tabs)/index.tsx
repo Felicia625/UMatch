@@ -11,6 +11,7 @@ import { Button } from '../../src/components/ui';
 import { GENDERS, MAJORS } from '../../src/constants/options';
 import { useTheme } from '../../src/constants/theme';
 import { useAuth } from '../../src/providers/AuthProvider';
+import { LikeIcon } from '../../src/components/LikeIcon';
 import { loadCandidates, SwipeDirection, swipeUser } from '../../src/services/swipes';
 import { getUser, updateUser } from '../../src/services/users';
 import { Preferences, UserProfile } from '../../src/types';
@@ -142,7 +143,7 @@ export default function Home() {
   async function onSwipe(target: UserProfile, direction: SwipeDirection) {
     if (!user) return;
     try {
-      const result = await swipeUser(user.uid, target.uid, direction);
+      const result = await swipeUser(user.uid, target.uid, direction, friendMode);
       if (result.matchId) setMatch({ user: target, matchId: result.matchId });
     } catch (e) {
       console.warn('Swipe failed', e);
@@ -192,7 +193,7 @@ export default function Home() {
             <Ionicons name="information" size={24} color={t.textSecondary} />
           </Pressable>
           <Pressable onPress={() => deck.current?.swipe('right')} style={[styles.round, { backgroundColor: t.surface }]} accessibilityLabel="Like">
-            <Ionicons name="thumbs-up" size={30} color={t.primary} />
+            <LikeIcon friend={friendMode} size={30} color={t.primary} />
           </Pressable>
         </View>
       )}

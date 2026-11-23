@@ -87,13 +87,18 @@ export async function loadCandidates(me: UserProfile): Promise<UserProfile[]> {
 
 export const matchIdFor = (a: string, b: string) => [a, b].sort().join('_'); // same id scheme as the Android app
 
-/** Makes sure the match document exists (keeps the chat history if it already does). */
-export async function ensureMatch(a: string, b: string): Promise<string> {
+/**
+ * Makes sure the match document exists (keeps the chat history if it already does).
+ * `friend` records the mode the connection was formed in (true = Friend first), which the connections graph uses to
+ * colour the line. It is only written when the match is created.
+ */
+export async function ensureMatch(a: string, b: string, friend = false): Promise<string> {
   const matchId = matchIdFor(a, b);
   const ref = doc(db, 'matches', matchId);
   if (!(await getDoc(ref)).exists()) {
     await setDoc(ref, {
       users: [a, b],
+      friend,
       lastMessage: 'You matched! Say hi!',
       timestamp: serverTimestamp(),
     });
@@ -106,6 +111,7 @@ export async function swipeUser(
   myId: string,
   otherId: string,
   direction: SwipeDirection,
+  friend = false,
 ): Promise<{ matchId?: string }> {
   const mine = doc(db, 'swipes', myId);
 
@@ -119,5 +125,5 @@ export async function swipeUser(
   const theirs = await getDoc(doc(db, 'swipes', otherId));
   const theyLikedMe = ((theirs.data()?.liked as string[] | undefined) ?? []).includes(myId);
   if (!theyLikedMe) return {};
-  return { matchId: await ensureMatch(myId, otherId) };
+  return { matchId: await ensureMatch(myId, otherId, friend) };
 }

@@ -59,6 +59,12 @@ describe('connections (graph)', () => {
   test('owner can hide: visible false with an empty list', () => assertSucceeds(setDoc(conn(umn('alice'), 'alice'), { visible: false, partners: [] })));
   test('hidden cannot still carry a list', () => assertFails(setDoc(conn(umn('alice'), 'alice'), { visible: false, partners: ['bob'] })));
   test("cannot write another person's connections", () => assertFails(setDoc(conn(umn('bob'), 'alice'), { visible: true, partners: ['bob'] })));
+  test('owner can publish which connections are friend-first', () =>
+    assertSucceeds(setDoc(conn(umn('alice'), 'alice'), { visible: true, partners: ['bob', 'carol'], friends: ['carol'] })));
+  test('hidden cannot still carry a friends list', () =>
+    assertFails(setDoc(conn(umn('alice'), 'alice'), { visible: false, partners: [], friends: ['carol'] })));
+  test('friends must be a list', () =>
+    assertFails(setDoc(conn(umn('alice'), 'alice'), { visible: true, partners: ['bob'], friends: 'bob' })));
   test('no extra fields', () => assertFails(setDoc(conn(umn('alice'), 'alice'), { visible: true, partners: [], note: 'x' })));
   test('owner can delete own document (account deletion)', async () => {
     await assertSucceeds(setDoc(conn(umn('alice'), 'alice'), { visible: true, partners: [] }));

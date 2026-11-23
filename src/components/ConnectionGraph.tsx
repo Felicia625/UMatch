@@ -9,6 +9,9 @@ import { GraphData, loadGraph } from '../services/connections';
 import { Avatar } from './Avatar';
 
 const NODE = 44;
+export const DATING_LINE = '#EC4899'; // pink: formed in the default mode
+export const FRIEND_LINE = '#F97316'; // orange: formed in Friend first mode
+const HIGHLIGHT = '#2563EB'; // blue border: you and the person whose graph this is
 const PAD = 40;
 
 interface Placed {
@@ -55,7 +58,7 @@ function layout(data: GraphData): { placed: Placed[]; width: number; height: num
 }
 
 /** The graph itself: pictures only; long press a picture to see the username, tap it to open the profile. */
-function GraphCanvas({ data, scale, height, centerId, recenter }: { data: GraphData; scale: number; height: number; centerId: string; recenter: number }) {
+function GraphCanvas({ data, scale, height, centerId, viewerId, recenter }: { data: GraphData; scale: number; height: number; centerId: string; viewerId: string; recenter: number }) {
   const t = useTheme();
   const router = useRouter();
   const [label, setLabel] = useState<string | null>(null);
@@ -107,7 +110,7 @@ function GraphCanvas({ data, scale, height, centerId, recenter }: { data: GraphD
       onLayout={(e) => setView({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
     >
       <View style={{ position: 'absolute', width: W, height: H, left: view.w / 2 - W / 2 + off.x, top: view.h / 2 - H / 2 + off.y }}>
-        {data.edges.map(([a, b]) => {
+        {data.edges.map(({ a, b, friend }) => {
           const p = at.get(a);
           const q = at.get(b);
           if (!p || !q) return null;
@@ -127,7 +130,7 @@ function GraphCanvas({ data, scale, height, centerId, recenter }: { data: GraphD
                 width: len,
                 height: 2,
                 borderRadius: 1,
-                backgroundColor: t.outline,
+                backgroundColor: friend ? FRIEND_LINE : DATING_LINE,
                 transform: [{ rotate: `${Math.atan2(y2 - y1, x2 - x1)}rad` }],
               }}
             />
@@ -136,6 +139,7 @@ function GraphCanvas({ data, scale, height, centerId, recenter }: { data: GraphD
         {g.placed.map((p) => {
           const profile = data.profiles[p.uid];
           const isCenter = p.uid === centerId;
+          const mark = isCenter || p.uid === viewerId; // you and the inspected person get the blue border
           return (
             <Pressable
               key={p.uid}
@@ -145,8 +149,8 @@ function GraphCanvas({ data, scale, height, centerId, recenter }: { data: GraphD
               accessibilityLabel={profile?.username}
               style={{ position: 'absolute', left: p.x * scale - size / 2, top: p.y * scale - size / 2 }}
             >
-              <View style={{ borderRadius: size, borderWidth: isCenter ? 3 : 2, borderColor: isCenter ? t.primary : t.outline, backgroundColor: t.surface }}>
-                <Avatar uri={profile?.photoUrl} name={profile?.username} size={size - (isCenter ? 6 : 4)} />
+              <View style={{ borderRadius: size, borderWidth: mark ? 3 : 2, borderColor: mark ? HIGHLIGHT : t.outline, backgroundColor: t.surface }}>
+                <Avatar uri={profile?.photoUrl} name={profile?.username} size={size - (mark ? 6 : 4)} />
               </View>
               {label === p.uid && (
                 <View style={[styles.tip, { backgroundColor: t.text, bottom: size + 4 }]}>
@@ -221,7 +225,8 @@ export function ConnectionGraph({ viewerId, centerId, username, reloadKey = 0 }:
           </Text>
         </View>
       )}
-      {hasGraph && data && <GraphCanvas data={data} scale={scale} height={h} centerId={centerId} recenter={recenter} />}
+      {hasGraph && data && <GraphCanvas data={data} scale={scale} height={h} centerId={centerId} viewerId={viewerId} recenter={recenter} />}
+      {hasGraph && <Legend />}
     </>
   );
 
@@ -258,6 +263,22 @@ export function ConnectionGraph({ viewerId, centerId, username, reloadKey = 0 }:
   );
 }
 
+function Legend() {
+  const t = useTheme();
+  const item = (color: string, text: string) => (
+    <View style={styles.legendItem}>
+      <View style={{ width: 18, height: 3, borderRadius: 2, backgroundColor: color }} />
+      <Text style={{ color: t.textSecondary, fontSize: 11 }}>{text}</Text>
+    </View>
+  );
+  return (
+    <View style={styles.legend}>
+      {item(DATING_LINE, 'Dating mode')}
+      {item(FRIEND_LINE, 'Friend first')}
+    </View>
+  );
+}
+
 function Ctl({ icon, label, onPress, disabled }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void; disabled?: boolean }) {
   const t = useTheme();
   return (
@@ -280,5 +301,7 @@ const styles = StyleSheet.create({
   controls: { flexDirection: 'row', gap: 8 },
   ctl: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   note: { alignItems: 'center', justifyContent: 'center', padding: 24 },
+  legend: { flexDirection: 'row', justifyContent: 'center', gap: 16, paddingTop: 6, paddingBottom: 4 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   tip: { position: 'absolute', alignSelf: 'center', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, maxWidth: 140, minWidth: 40 },
 });

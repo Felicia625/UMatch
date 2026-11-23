@@ -56,6 +56,7 @@ export function Button({
   disabled,
   variant = 'primary',
   compact,
+  icon,
 }: {
   title: string;
   onPress: () => void;
@@ -63,6 +64,7 @@ export function Button({
   disabled?: boolean;
   variant?: 'primary' | 'outline' | 'ghost' | 'danger';
   compact?: boolean; // smaller button for dialogs
+  icon?: (color: string) => React.ReactNode; // optional icon before the title
 }) {
   const t = useTheme();
   const filled = variant === 'primary' || variant === 'danger';
@@ -83,7 +85,10 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={filled ? t.onPrimary : t.primary} />
       ) : (
-        <Text style={{ color: filled ? t.onPrimary : t.primary, fontWeight: '600', fontSize: compact ? 14 : 16 }}>{title}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {icon?.(filled ? t.onPrimary : t.primary)}
+          <Text style={{ color: filled ? t.onPrimary : t.primary, fontWeight: '600', fontSize: compact ? 14 : 16 }}>{title}</Text>
+        </View>
       )}
     </Pressable>
   );

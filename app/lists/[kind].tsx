@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { Button } from '../../src/components/ui';
+import { Button, TextField } from '../../src/components/ui';
 import { PersonPlaceholder } from '../../src/components/Avatar';
 import { WIDE_SCREEN } from '../../src/constants/layout';
 import { useTheme } from '../../src/constants/theme';
@@ -18,6 +18,7 @@ import {
   unpassUser,
 } from '../../src/services/likes';
 import { matchIdFor } from '../../src/services/swipes';
+import { getUser } from '../../src/services/users';
 import { UserProfile } from '../../src/types';
 
 type Kind = 'liked-me' | 'my-likes' | 'passed';
@@ -33,7 +34,7 @@ const CONFIG: Record<
     empty: string;
     action: string;
     load: (myId: string) => Promise<UserProfile[]>;
-    run: (myId: string, otherId: string) => Promise<string | void>;
+    run: (myId: string, otherId: string, friend: boolean) => Promise<string | void>;
     confirm?: (u: UserProfile) => { title: string; message: string };
     done: (u: UserProfile) => string;
   }
@@ -85,13 +86,20 @@ export default function UserList() {
 
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [friendMode, setFriendMode] = useState(false); // my mode: decides the icon on the like-back button
+  const [search, setSearch] = useState('');
   const [mutual, setMutual] = useState<Set<string>>(new Set()); // "Who liked me": people I like back, so already connected
 
   const load = useCallback(async () => {
     if (!user) return;
     setStatus('loading');
     try {
-      const [list, liked] = await Promise.all([cfg.load(user.uid), kind === 'liked-me' ? getMyLikedIds(user.uid) : Promise.resolve([])]);
+      const [list, liked, me] = await Promise.all([
+        cfg.load(user.uid),
+        kind === 'liked-me' ? getMyLikedIds(user.uid) : Promise.resolve([]),
+        getUser(user.uid).catch(() => null),
+      ]);
+      setFriendMode(me?.friendFirst === true);
       setUsers(list);
       setMutual(new Set(liked));
       setStatus('ready');
@@ -102,8 +110,11 @@ export default function UserList() {
   }, [user, cfg, kind]);
 
   // Empty slots fill the last row, so a single card in a row keeps the width of the others instead of stretching.
-  const padded: (UserProfile | { filler: string })[] = [...users];
-  while (users.length > 0 && padded.length % columns !== 0) padded.push({ filler: `filler-${padded.length}` });
+  // Search by username (case-insensitive, any part of the name).
+  const q = search.trim().toLowerCase();
+  const shown = useMemo(() => (q ? users.filter((u) => u.username.toLowerCase().includes(q)) : users), [users, q]);
+  const padded: (UserProfile | { filler: string })[] = [...shown];
+  while (shown.length > 0 && padded.length % columns !== 0) padded.push({ filler: `filler-${padded.length}` });
 
   useEffect(() => {
     load();
@@ -112,7 +123,7 @@ export default function UserList() {
   async function perform(target: UserProfile) {
     if (!user) return;
     try {
-      await cfg.run(user.uid, target.uid); // the user id, not the whole profile
+      await cfg.run(user.uid, target.uid, friendMode); // the user id, not the whole profile
       // "Who liked me" keeps everyone (a like back makes them mutual); the other lists drop the person.
       if (kind === 'liked-me') setMutual((s) => new Set(s).add(target.uid));
       else setUsers((list) => list.filter((u) => u.uid !== target.uid));
@@ -138,6 +149,26 @@ export default function UserList() {
 
       <Text style={[styles.intro, { color: t.textSecondary }]}>{cfg.intro}</Text>
 
+      {status === 'ready' && users.length > 0 && (
+        <View style={styles.searchWrap}>
+          <Ionicons name="search" size={18} color={t.textSecondary} style={styles.searchIcon} />
+          <TextField
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search by username"
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+            style={styles.searchField}
+          />
+          {search.length > 0 && (
+            <Pressable onPress={() => setSearch('')} hitSlop={8} style={styles.searchClear} accessibilityLabel="Clear search">
+              <Ionicons name="close-circle" size={18} color={t.textSecondary} />
+            </Pressable>
+          )}
+        </View>
+      )}
+
       {status === 'loading' && <ActivityIndicator color={t.primary} size="large" style={{ marginTop: 48 }} />}
       {status === 'error' && (
         <View style={styles.center}>
@@ -154,11 +185,18 @@ export default function UserList() {
           contentContainerStyle={{ padding: 12, flexGrow: 1, width: '100%', maxWidth: 1000, alignSelf: 'center' }}
           columnWrapperStyle={{ gap: 12 }}
           ListEmptyComponent={
+            users.length > 0 ? (
+              <View style={styles.center}>
+                <Ionicons name="search" size={80} color={t.textSecondary} style={{ opacity: 0.18 }} />
+                <Text style={{ color: t.textSecondary, marginTop: 16, fontSize: 16, textAlign: 'center' }}>No one matches "{search.trim()}".</Text>
+              </View>
+            ) : (
             <View style={styles.center}>
               <Ionicons name={cfg.icon} size={120} color={t.textSecondary} style={{ opacity: 0.18 }} />
               <Text style={{ color: t.textSecondary, marginTop: 16, fontSize: 16, textAlign: 'center' }}>{cfg.empty}</Text>
               <Text style={{ color: t.textSecondary, marginTop: 4, textAlign: 'center' }}>{cfg.emptyHint}</Text>
             </View>
+            )
           }
           renderItem={({ item }) =>
             'filler' in item ? (
@@ -180,7 +218,12 @@ export default function UserList() {
                 {kind === 'liked-me' && mutual.has(item.uid) ? (
                   <Button title="Open chat" variant="outline" onPress={() => user && router.push(`/chat/${matchIdFor(user.uid, item.uid)}`)} />
                 ) : (
-                  <Button title={cfg.action} variant={kind === 'liked-me' ? 'primary' : 'outline'} onPress={() => onAction(item)} />
+                  <Button
+                    title={cfg.action}
+                    variant={kind === 'liked-me' ? 'primary' : 'outline'}
+                    icon={kind === 'liked-me' ? (color) => (friendMode ? <Ionicons name="thumbs-up" size={18} color={color} /> : <Ionicons name="heart" size={18} color={color} />) : undefined}
+                    onPress={() => onAction(item)}
+                  />
                 )}
               </View>
             </View>
@@ -194,6 +237,10 @@ export default function UserList() {
 
 const styles = StyleSheet.create({
   intro: { fontSize: 15, textAlign: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, width: '100%', maxWidth: 1000, alignSelf: 'center' },
+  searchWrap: { width: '100%', maxWidth: 1000, alignSelf: 'center', paddingHorizontal: 12, paddingTop: 8 },
+  searchField: { height: 44, marginBottom: 0, paddingLeft: 40, paddingRight: 40 },
+  searchIcon: { position: 'absolute', left: 26, top: 21, zIndex: 1 },
+  searchClear: { position: 'absolute', right: 26, top: 21, zIndex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   card: { flex: 1, borderRadius: 16, overflow: 'hidden', marginBottom: 12 },
   photo: { width: '100%', aspectRatio: 1 },

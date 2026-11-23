@@ -35,6 +35,22 @@ service cloud.firestore {
     match /swipes/{uid} { allow read, write: if umnVerified(); }
     match /blocks/{uid} { allow read, write: if umnVerified(); }
 
+    // The connections graph: each person publishes their own list of matches here, and only when they chose to show it
+    // (visible = true). `friends` is the part of the list formed in Friend first mode (line colour). When hidden, both lists must be empty, so there is nothing for others to read.
+    match /connections/{uid} {
+      allow read: if umnVerified();
+      allow create, update: if umnVerified() && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly(['visible', 'partners', 'friends'])
+                            && request.resource.data.visible is bool
+                            && request.resource.data.partners is list
+                            && request.resource.data.partners.size() <= 500
+                            && request.resource.data.get('friends', []) is list
+                            && request.resource.data.get('friends', []).size() <= 500
+                            && (request.resource.data.visible
+                                || (request.resource.data.partners.size() == 0 && request.resource.data.get('friends', []).size() == 0));
+      allow delete: if umnVerified() && request.auth.uid == uid;
+    }
+
     match /favorites/{uid} {
       allow read, write: if umnVerified() && request.auth.uid == uid;
     }
