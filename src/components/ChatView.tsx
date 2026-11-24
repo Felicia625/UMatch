@@ -1,4 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
+import { rightClick } from '../utils/rightClick';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -130,6 +132,7 @@ export function ChatView({ matchId, embedded = false, onClose }: { matchId: stri
 
   const menuOptions = menuFor
     ? [
+        { label: 'Copy', run: () => Clipboard.setStringAsync(menuFor.text).catch(() => Alert.alert('Could not copy')) },
         { label: 'Reply', run: () => { setEditing(null); setReplyTo(menuFor); } },
         { label: menuFor.pinned ? 'Unpin' : 'Pin', run: () => setPinned(matchId, menuFor.id, !menuFor.pinned).catch(() => Alert.alert('Failed to update')) },
         ...(menuFor.senderId === myId
@@ -165,7 +168,7 @@ export function ChatView({ matchId, embedded = false, onClose }: { matchId: stri
         <View style={[styles.pinnedBar, { backgroundColor: t.surfaceVariant, borderColor: t.outline }]}>
           <ScrollView>
             {pinned.map((m) => (
-              <Pressable key={m.id} onLongPress={() => setMenuFor(m)} style={{ paddingVertical: 4 }}>
+              <Pressable key={m.id} onLongPress={() => setMenuFor(m)} {...rightClick(() => setMenuFor(m))} style={{ paddingVertical: 4 }}>
                 <Text style={{ color: t.text }} numberOfLines={2}>
                   📌 {m.text}
                 </Text>
@@ -209,6 +212,18 @@ export function ChatView({ matchId, embedded = false, onClose }: { matchId: stri
             placeholder={editing ? 'Editing message...' : 'Type a message...'}
             placeholderTextColor={t.textSecondary}
             multiline
+            // Website / desktop: Enter sends, Shift+Enter adds a new line. Phones keep Enter as a new line.
+            onKeyPress={
+              Platform.OS === 'web'
+                ? (e) => {
+                    const k = e.nativeEvent as unknown as { key: string; shiftKey?: boolean; isComposing?: boolean };
+                    if (k.key === 'Enter' && !k.shiftKey && !k.isComposing) {
+                      (e as unknown as { preventDefault?: () => void }).preventDefault?.();
+                      if (text.trim() && allowed) onSend();
+                    }
+                  }
+                : undefined
+            }
             style={[styles.input, { color: t.text, backgroundColor: t.surfaceVariant }]}
           />
           <Pressable
@@ -254,6 +269,7 @@ function Bubble({ message, mine, onLongPress }: { message: Message; mine: boolea
     <View style={{ alignItems: mine ? 'flex-end' : 'flex-start', marginVertical: 3 }}>
       <Pressable
         onLongPress={onLongPress}
+        {...rightClick(onLongPress)}
         style={[styles.bubble, mine ? { backgroundColor: t.primary, borderBottomRightRadius: 4 } : { backgroundColor: t.surface, borderBottomLeftRadius: 4 }]}
       >
         {!!message.replyText && (

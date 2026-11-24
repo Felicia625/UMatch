@@ -30,7 +30,12 @@ function layout(data: GraphData): { placed: Placed[]; width: number; height: num
   pos.set(data.nodes[0].uid, { uid: data.nodes[0].uid, x: 0, y: 0, level: 0 });
   const angleOf = new Map<string, number>();
   l1.forEach((n, i) => {
-    const a = (2 * Math.PI * i) / Math.max(l1.length, 1) - Math.PI / 2;
+    // Two people would sit exactly opposite each other, so a line between them would run through the middle person and
+    // hide behind the other lines. Put them side by side instead (a triangle).
+    const a =
+      l1.length === 2
+        ? (i === 0 ? -5 : -1) * (Math.PI / 6)
+        : (2 * Math.PI * i) / Math.max(l1.length, 1) - Math.PI / 2;
     angleOf.set(n.uid, a);
     pos.set(n.uid, { uid: n.uid, x: Math.cos(a) * r1, y: Math.sin(a) * r1, level: 1 });
   });
@@ -57,7 +62,7 @@ function layout(data: GraphData): { placed: Placed[]; width: number; height: num
   };
 }
 
-/** The graph itself: pictures only; long press a picture to see the username, tap it to open the profile. */
+/** The graph itself: pictures only; long press (right-click / hover on the web) a picture to see the username, tap it to open the profile. */
 function GraphCanvas({ data, scale, height, centerId, viewerId, recenter }: { data: GraphData; scale: number; height: number; centerId: string; viewerId: string; recenter: number }) {
   const t = useTheme();
   const router = useRouter();
@@ -97,6 +102,11 @@ function GraphCanvas({ data, scale, height, centerId, viewerId, recenter }: { da
   }, []);
 
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
+  // On the website the username shows while the cursor is over a picture.
+  function hover(uid: string | null) {
+    if (timer.current) clearTimeout(timer.current);
+    setLabel(uid);
+  }
   function showLabel(uid: string) {
     setLabel(uid);
     if (timer.current) clearTimeout(timer.current);
@@ -145,6 +155,7 @@ function GraphCanvas({ data, scale, height, centerId, viewerId, recenter }: { da
               key={p.uid}
               onPress={() => !isCenter && router.push(`/profile/${p.uid}`)}
               onLongPress={() => showLabel(p.uid)}
+              {...(Platform.OS === 'web' ? ({ onHoverIn: () => hover(p.uid), onHoverOut: () => hover(null) } as object) : {})}
               delayLongPress={350}
               accessibilityLabel={profile?.username}
               style={{ position: 'absolute', left: p.x * scale - size / 2, top: p.y * scale - size / 2 }}
@@ -247,7 +258,9 @@ export function ConnectionGraph({ viewerId, centerId, username, reloadKey = 0 }:
       </View>
       {body(300)}
       <Text style={{ color: t.textSecondary, fontSize: 11, textAlign: 'center', paddingBottom: 8 }}>
-        Tap a picture to open the profile, press and hold to see the username.
+        {Platform.OS === 'web'
+          ? 'Click a picture to open the profile, hover over it to see the username.'
+          : 'Tap a picture to open the profile, press and hold to see the username.'}
       </Text>
 
       <Modal visible={full} animationType="fade" supportedOrientations={['portrait', 'landscape']} onRequestClose={() => setFull(false)}>

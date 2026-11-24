@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { UserProfile } from '../types';
 import { loadMatchMeta } from './matches';
@@ -61,20 +61,30 @@ export async function getMyActivePartners(myId: string): Promise<string[]> {
 
 /**
  * My matches, split by the mode each one was formed in. The mode is stored on the match document when it is created;
- * older matches have no such field, so they count as the mode I am in now.
+ * Older matches have no such field. For those the mode I published earlier is kept (so switching mode later does not
+ * recolour them); if nothing was published yet, the mode I am in now is used. Either way the answer is written onto the
+ * match document, so from then on it stays fixed for both people.
  */
-export async function getMyPartnersWithMode(myId: string): Promise<{ partners: string[]; friends: string[] }> {
+export async function getMyPartnersWithMode(
+  myId: string,
+  published?: { partners: string[]; friends: string[] },
+): Promise<{ partners: string[]; friends: string[] }> {
   const [partners, me] = await Promise.all([getMyActivePartners(myId), getUser(myId).catch(() => null)]);
-  const fallback = me?.friendFirst === true;
+  const nowFriend = me?.friendFirst === true;
   const friends: string[] = [];
   await Promise.all(
     partners.map(async (p) => {
+      const fallback = published?.partners.includes(p) ? published.friends.includes(p) : nowFriend;
+      let isFriend = fallback;
       try {
-        const f = (await getDoc(doc(db, 'matches', matchIdFor(myId, p)))).data()?.friend;
-        if (typeof f === 'boolean' ? f : fallback) friends.push(p);
+        const ref = doc(db, 'matches', matchIdFor(myId, p));
+        const f = (await getDoc(ref)).data()?.friend;
+        if (typeof f === 'boolean') isFriend = f;
+        else await updateDoc(ref, { friend: fallback }).catch(() => undefined); // fix the mode on the match
       } catch {
-        if (fallback) friends.push(p);
+        /* keep the fallback */
       }
+      if (isFriend) friends.push(p);
     }),
   );
   return { partners, friends };
@@ -95,7 +105,7 @@ export async function syncMyConnections(myId: string): Promise<void> {
   try {
     const current = await readConn(myId);
     if (!current.visible) return;
-    const { partners, friends } = await getMyPartnersWithMode(myId);
+    const { partners, friends } = await getMyPartnersWithMode(myId, current);
     const sameSet = (x: string[], y: string[]) => x.length === y.length && x.every((p) => y.includes(p));
     if (!sameSet(partners, current.partners) || !sameSet(friends, current.friends)) {
       await setDoc(doc(db, 'connections', myId), { visible: true, partners, friends });

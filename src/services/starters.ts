@@ -12,7 +12,7 @@ export interface Starters {
 }
 
 const AI_ENABLED_KEY = 'ai_starters_enabled';
-const AI_DAILY_LIMIT = 10; // AI requests per person per day, to protect the shared free quota
+export const AI_DAILY_LIMIT = 5; // AI requests per person per day, to protect the shared free quota
 
 export async function getAiStartersEnabled(): Promise<boolean> {
   try {
@@ -21,10 +21,28 @@ export async function getAiStartersEnabled(): Promise<boolean> {
     return true;
   }
 }
-export const setAiStartersEnabled = (value: boolean) => AsyncStorage.setItem(AI_ENABLED_KEY, String(value)).catch(() => { });
+export const setAiStartersEnabled = (value: boolean) => AsyncStorage.setItem(AI_ENABLED_KEY, String(value)).catch(() => {});
+
+// The day is the phone's local day, so the count starts again at local midnight.
+function quotaKey(myId: string): string {
+  const d = new Date();
+  const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return `starters_quota:${myId}:${day}`;
+}
+
+/** AI requests still available today (null when the AI ideas are turned off in settings). */
+export async function getAiQuotaLeft(myId: string): Promise<number | null> {
+  if (!(await getAiStartersEnabled())) return null;
+  try {
+    const used = Number((await AsyncStorage.getItem(quotaKey(myId))) ?? '0');
+    return Math.max(0, AI_DAILY_LIMIT - used);
+  } catch {
+    return AI_DAILY_LIMIT;
+  }
+}
 
 async function takeQuota(myId: string): Promise<boolean> {
-  const key = `starters_quota:${myId}:${new Date().toISOString().slice(0, 10)}`;
+  const key = quotaKey(myId);
   try {
     const used = Number((await AsyncStorage.getItem(key)) ?? '0');
     if (used >= AI_DAILY_LIMIT) return false;
@@ -121,5 +139,5 @@ export async function loadStarters(
     }
   }
   onUpdate(current);
-  AsyncStorage.setItem(cacheKey, JSON.stringify(current)).catch(() => { });
+  AsyncStorage.setItem(cacheKey, JSON.stringify(current)).catch(() => {});
 }
