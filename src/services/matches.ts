@@ -34,6 +34,7 @@ export function subscribeToMatches(
           id: d.id,
           users: [data.users[0], data.users[1]],
           lastMessage: data.lastMessage ?? '',
+          friend: typeof data.friend === 'boolean' ? data.friend : undefined,
           timestamp: toDate(data.timestamp),
         });
       });
@@ -72,6 +73,7 @@ export function subscribeToMatchEvents(
           id: change.doc.id,
           users: [data.users[0], data.users[1]],
           lastMessage: data.lastMessage ?? '',
+          friend: typeof data.friend === 'boolean' ? data.friend : undefined,
           timestamp: toDate(data.timestamp),
         };
         if (change.type === 'added') onEvent({ kind: 'match', match });

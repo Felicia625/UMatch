@@ -29,6 +29,14 @@ export function renderAppHeader({ options, route, back }: HeaderProps) {
   );
 }
 
+/**
+ * Header for the root Stack. A stack screen always shows the back button: after a browser refresh (or when a link is
+ * opened directly) the navigation history is gone and `back` is undefined, but the button then goes Home instead.
+ */
+export function renderStackHeader(props: HeaderProps) {
+  return renderAppHeader({ ...props, back: props.back ?? { fallback: true } });
+}
+
 /** App-coloured title bar: back button (stack screens), title, screen-specific buttons, help (guide) and settings. */
 export function AppHeader({
   title,
@@ -52,7 +60,7 @@ export function AppHeader({
     <View style={{ backgroundColor: t.primary, paddingTop: insets.top }}>
       <View style={styles.bar}>
         {showBack && (
-          <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
+          <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </Pressable>
         )}

@@ -42,38 +42,36 @@ export default function ProfileView() {
     getMyLikedIds(user.uid).then((ids) => setLiked(ids.includes(uid))).catch(() => undefined);
   }, [user, uid]);
 
-  const friendMode = me?.friendFirst === true;
-  // The button is for other people (not myself). Its icon follows the mode of the person being viewed:
-  // heart for the default mode, thumbs-up for Friend first.
-  const theirFriendMode = profile?.friendFirst === true;
-  const canLike = !!user && !!me && !!profile && profile.uid !== user.uid;
+  // Only people in the same mode can like each other: both Friend first (any gender), or both not and of the opposite
+  // gender. Otherwise there is no like button; a badge shows the other person's mode so it is clear why.
+  const sameMode = !!me && !!profile && isCompatible(me, profile);
+  const myFriend = me?.friendFirst === true;
+  const canLike = !!user && !!profile && profile.uid !== user.uid && sameMode;
+  const isSelf = !!user && profile?.uid === user.uid;
 
   async function onToggleLike() {
     if (!user || !profile || busy) return;
-    if (!liked) {
-      if (me && !isCompatible(me, profile)) {
-        // Different modes: only a warning, nothing is saved.
-        Alert.alert(
-          'Different mode',
-          profile.friendFirst
-            ? `${profile.username} is in Friend first mode, but you are not. Switch to Friend first mode to connect with them.`
-            : `${profile.username} is not in Friend first mode, but you are. Turn off Friend first mode to connect with them.`,
-        );
-        return;
-      }
-      setBusy(true);
-      try {
-        const result = await swipeUser(user.uid, profile.uid, 'right', friendMode);
-        setLiked(true);
-        if (result.matchId) Alert.alert(friendMode ? "You're now friends!" : "You're connected!", `You and ${profile.username} can chat now.`);
-      } catch (e) {
-        console.warn('Like failed', e);
-        Alert.alert("Couldn't like this person", 'Check your connection and try again.');
-      } finally {
-        setBusy(false);
-      }
-      return;
+    if (liked) unlikeWithConfirm();
+    else await doLike(myFriend);
+  }
+
+  async function doLike(friend: boolean) {
+    if (!user || !profile) return;
+    setBusy(true);
+    try {
+      const result = await swipeUser(user.uid, profile.uid, 'right', friend);
+      setLiked(true);
+      if (result.matchId) Alert.alert(friend ? "You're now friends!" : "You're connected!", `You and ${profile.username} can chat now.`);
+    } catch (e) {
+      console.warn('Like failed', e);
+      Alert.alert("Couldn't like this person", 'Check your connection and try again.');
+    } finally {
+      setBusy(false);
     }
+  }
+
+  function unlikeWithConfirm() {
+    if (!user || !profile) return;
     // Same as "Unlike" on the People I liked page: confirm, then remove only the like (it is not a pass).
     Alert.alert(`Unlike ${profile.username}?`, 'This will remove them from your liked list.', [
       { text: 'Cancel', style: 'cancel' },
@@ -117,6 +115,12 @@ export default function ProfileView() {
             ) : (
               <PersonPlaceholder style={styles.photo} iconSize={120} />
             )}
+            {!isSelf && (
+              <View style={[styles.modeBadge, { backgroundColor: t.surface }]}>
+                <Ionicons name={profile.friendFirst ? 'thumbs-up' : 'heart'} size={14} color={t.primary} />
+                <Text style={{ color: t.text, fontSize: 12, fontWeight: '600' }}>{profile.friendFirst ? 'Friend first mode' : 'Dating mode'}</Text>
+              </View>
+            )}
             {canLike && (
               <Pressable
                 onPress={onToggleLike}
@@ -126,7 +130,7 @@ export default function ProfileView() {
                 style={[styles.likeBtn, { backgroundColor: t.surface, opacity: busy ? 0.6 : 1 }]}
               >
                 <Ionicons
-                  name={theirFriendMode ? (liked ? 'thumbs-up' : 'thumbs-up-outline') : liked ? 'heart' : 'heart-outline'}
+                  name={myFriend ? (liked ? 'thumbs-up' : 'thumbs-up-outline') : liked ? 'heart' : 'heart-outline'}
                   size={28}
                   color={t.primary}
                 />
@@ -137,6 +141,15 @@ export default function ProfileView() {
             {profile.username}
             {profile.photoVerified ? '  ✓' : ''}
           </Text>
+          {!isSelf && !!me && !sameMode && (
+            <Text style={{ color: t.textSecondary, textAlign: 'center', marginTop: 6, fontSize: 13 }}>
+              {profile.friendFirst
+                ? `${profile.username} is in Friend first mode, so you can only like them when you are in Friend first mode too.`
+                : me.friendFirst
+                  ? `${profile.username} is in Dating mode, so you can only like them when you turn Friend first mode off.`
+                  : `${profile.username} is in Dating mode, but you can only like people of the opposite gender in this mode.`}
+            </Text>
+          )}
           {!!profile.bio && <Text style={{ color: t.textSecondary, textAlign: 'center', marginVertical: 8 }}>{profile.bio}</Text>}
           <View style={{ alignSelf: 'stretch', marginTop: 16 }}>
             {rows.filter(([, v]) => !!v).map(([label, value]) => (
@@ -161,6 +174,22 @@ const styles = StyleSheet.create({
   // Same shape as the discovery card: a large, nearly square photo instead of a small circle.
   photoWrap: { width: '100%', maxWidth: 420, aspectRatio: 1, borderRadius: 20, overflow: 'visible' },
   photo: { width: '100%', height: '100%', borderRadius: 20 },
+  modeBadge: {
+    position: 'absolute',
+    left: 12,
+    bottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+  },
   likeBtn: {
     position: 'absolute',
     right: 12,

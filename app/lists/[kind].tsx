@@ -33,7 +33,7 @@ const CONFIG: Record<
     emptyHint: string;
     empty: string;
     action: string;
-    load: (myId: string) => Promise<UserProfile[]>;
+    load: (myId: string) => Promise<{ users: UserProfile[]; otherMode?: number }>;
     run: (myId: string, otherId: string, friend: boolean) => Promise<string | void>;
     confirm?: (u: UserProfile) => { title: string; message: string };
     done: (u: UserProfile) => string;
@@ -57,7 +57,7 @@ const CONFIG: Record<
     emptyHint: 'Users you like will appear here',
     empty: "You haven't liked anyone yet.",
     action: 'Unlike',
-    load: getUsersILiked,
+    load: async (id) => ({ users: await getUsersILiked(id) }),
     run: unlikeUser,
     confirm: (u) => ({ title: `Unlike ${u.username}?`, message: 'This will remove them from your liked list.' }),
     done: (u) => `Unliked ${u.username}`,
@@ -69,7 +69,7 @@ const CONFIG: Record<
     emptyHint: 'Users you passed will appear here',
     empty: "You haven't passed anyone.",
     action: 'Undo pass',
-    load: getPassedUsers,
+    load: async (id) => ({ users: await getPassedUsers(id) }),
     run: unpassUser,
     done: () => 'Removed from passed list',
   },
@@ -86,7 +86,8 @@ export default function UserList() {
 
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [friendMode, setFriendMode] = useState(false); // my mode: decides the icon on the like-back button
+  const [me, setMe] = useState<UserProfile | null>(null);
+  const [otherMode, setOtherMode] = useState(0); // "Who liked me": people waiting in the other mode
   const [search, setSearch] = useState('');
   const [mutual, setMutual] = useState<Set<string>>(new Set()); // "Who liked me": people I like back, so already connected
 
@@ -99,8 +100,9 @@ export default function UserList() {
         kind === 'liked-me' ? getMyLikedIds(user.uid) : Promise.resolve([]),
         getUser(user.uid).catch(() => null),
       ]);
-      setFriendMode(me?.friendFirst === true);
-      setUsers(list);
+      setMe(me);
+      setOtherMode(list.otherMode ?? 0);
+      setUsers(list.users);
       setMutual(new Set(liked));
       setStatus('ready');
     } catch (e) {
@@ -123,7 +125,7 @@ export default function UserList() {
   async function perform(target: UserProfile) {
     if (!user) return;
     try {
-      await cfg.run(user.uid, target.uid, friendMode); // the user id, not the whole profile
+      await cfg.run(user.uid, target.uid, me?.friendFirst === true); // the user id, not the whole profile
       // "Who liked me" keeps everyone (a like back makes them mutual); the other lists drop the person.
       if (kind === 'liked-me') setMutual((s) => new Set(s).add(target.uid));
       else setUsers((list) => list.filter((u) => u.uid !== target.uid));
@@ -148,6 +150,18 @@ export default function UserList() {
       <Stack.Screen options={{ title: cfg.title }} />
 
       <Text style={[styles.intro, { color: t.textSecondary }]}>{cfg.intro}</Text>
+
+      {kind === 'liked-me' && status === 'ready' && otherMode > 0 && (
+        <View style={styles.noticeWrap}>
+          <View style={[styles.notice, { backgroundColor: t.surface, borderColor: t.outline }]}>
+            <Ionicons name="information-circle-outline" size={20} color={t.primary} />
+            <Text style={{ flex: 1, color: t.text, fontSize: 13 }}>
+              {`${otherMode} ${otherMode === 1 ? 'person' : 'people'} in ${me?.friendFirst ? 'Dating' : 'Friend first'} mode also liked you. ` +
+                `Switch to ${me?.friendFirst ? 'Dating' : 'Friend first'} mode with the Friend first switch on your Profile tab to see them.`}
+            </Text>
+          </View>
+        </View>
+      )}
 
       {status === 'ready' && users.length > 0 && (
         <View style={styles.searchWrap}>
@@ -188,7 +202,7 @@ export default function UserList() {
             users.length > 0 ? (
               <View style={styles.center}>
                 <Ionicons name="search" size={80} color={t.textSecondary} style={{ opacity: 0.18 }} />
-                <Text style={{ color: t.textSecondary, marginTop: 16, fontSize: 16, textAlign: 'center' }}>No one matches "{search.trim()}".</Text>
+                <Text style={{ color: t.textSecondary, marginTop: 16, fontSize: 16, textAlign: 'center' }}>No one matches your search.</Text>
               </View>
             ) : (
             <View style={styles.center}>
@@ -221,7 +235,7 @@ export default function UserList() {
                   <Button
                     title={cfg.action}
                     variant={kind === 'liked-me' ? 'primary' : 'outline'}
-                    icon={kind === 'liked-me' ? (color) => (friendMode ? <Ionicons name="thumbs-up" size={18} color={color} /> : <Ionicons name="heart" size={18} color={color} />) : undefined}
+                    icon={kind === 'liked-me' && me ? (color) => <Ionicons name={me.friendFirst ? 'thumbs-up' : 'heart'} size={18} color={color} /> : undefined}
                     onPress={() => onAction(item)}
                   />
                 )}
@@ -241,6 +255,8 @@ const styles = StyleSheet.create({
   searchField: { height: 44, marginBottom: 0, paddingLeft: 40, paddingRight: 40 },
   searchIcon: { position: 'absolute', left: 26, top: 21, zIndex: 1 },
   searchClear: { position: 'absolute', right: 26, top: 21, zIndex: 1 },
+  noticeWrap: { width: '100%', maxWidth: 1000, alignSelf: 'center', paddingHorizontal: 12, paddingTop: 8 },
+  notice: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderWidth: 1, borderRadius: 12, padding: 12 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   card: { flex: 1, borderRadius: 16, overflow: 'hidden', marginBottom: 12 },
   photo: { width: '100%', aspectRatio: 1 },

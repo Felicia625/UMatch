@@ -2,6 +2,7 @@ import {
   arrayRemove,
   arrayUnion,
   collection,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -12,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { UserProfile } from '../types';
-import { ensureMatch } from './swipes';
+import { ensureMatch, likeModeName } from './swipes';
 import { isCompatible } from '../utils/preferences';
 import { getUser, getUsersByIds as loadUsers } from './users';
 
@@ -34,14 +35,17 @@ export async function getMyLikedIds(myId: string): Promise<string[]> {
  * who liked me and connect again later. LikesFragment downloaded every swipes document to find these; an
  * array-contains query does the same job on the server.
  */
-export async function getUsersWhoLikedMe(myId: string): Promise<UserProfile[]> {
+export async function getUsersWhoLikedMe(myId: string): Promise<{ users: UserProfile[]; otherMode: number }> {
   const [likedMe, me] = await Promise.all([
     getDocs(query(collection(db, 'swipes'), where('liked', 'array-contains', myId))),
     getUser(myId),
   ]);
   const users = await loadUsers(likedMe.docs.map((d) => d.id).filter((id) => id !== myId));
-  // Hide people from the other mode (for example, someone who liked you before either of you switched to friend mode).
-  return me ? users.filter((u) => isCompatible(me, u)) : users;
+  if (!me) return { users, otherMode: 0 };
+  // Only people in the same mode are listed. The others are counted so the screen can say how many are waiting in the
+  // other mode.
+  const sameMode = users.filter((u) => isCompatible(me, u));
+  return { users: sameMode, otherMode: users.length - sameMode.length };
 }
 
 export async function getUsersILiked(myId: string): Promise<UserProfile[]> {
@@ -56,7 +60,7 @@ export async function getPassedUsers(myId: string): Promise<UserProfile[]> {
 export async function likeBack(myId: string, otherId: string, friend = false): Promise<string> {
   await setDoc(
     doc(db, 'swipes', myId),
-    { liked: arrayUnion(otherId), passed: arrayRemove(otherId) },
+    { liked: arrayUnion(otherId), passed: arrayRemove(otherId), likeModes: { [otherId]: likeModeName(friend) } },
     { merge: true },
   );
   return ensureMatch(myId, otherId, friend);
@@ -66,7 +70,7 @@ export async function likeBack(myId: string, otherId: string, friend = false): P
 export async function unlikeUser(myId: string, otherId: string): Promise<void> {
   const ref = doc(db, 'swipes', myId);
   const before = ((await getDoc(ref)).data()?.liked as string[] | undefined) ?? [];
-  await setDoc(ref, { liked: arrayRemove(otherId) }, { merge: true });
+  await setDoc(ref, { liked: arrayRemove(otherId), likeModes: { [otherId]: deleteField() } }, { merge: true });
   const after = ((await getDoc(ref)).data()?.liked as string[] | undefined) ?? [];
   if (__DEV__) {
     // Compare "project" and the document path with what you see in the Firebase console.

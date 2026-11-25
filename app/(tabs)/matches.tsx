@@ -19,6 +19,16 @@ const TABS: { key: MatchStatus; label: string }[] = [
   { key: 'blocked', label: 'Blocked' },
 ];
 
+type ModeFilter = 'all' | 'dating' | 'friend';
+const MODES: { key: ModeFilter; label: string; icon: 'heart' | 'thumbs-up' | null }[] = [
+  { key: 'all', label: 'All', icon: null },
+  { key: 'dating', label: 'Dating', icon: 'heart' },
+  { key: 'friend', label: 'Friend', icon: 'thumbs-up' },
+];
+
+/** The mode a match was formed in. Matches made before it was stored use the partner's current mode. */
+const isFriendMatch = (r: MatchRow) => r.match.friend ?? r.partner.friendFirst === true;
+
 // Port of MatchListFragment: tabs, search, favourites filter, block / unblock, pull to refresh.
 export default function Matches() {
   const t = useTheme();
@@ -30,6 +40,7 @@ export default function Matches() {
   const [tab, setTab] = useState<MatchStatus>('active');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [search, setSearch] = useState('');
+  const [modeFilter, setModeFilter] = useState<ModeFilter>('all');
   const [refreshing, setRefreshing] = useState(false);
 
   // Wide screens: list on the left, the selected chat on the right. Phones keep opening the chat full screen.
@@ -64,15 +75,20 @@ export default function Matches() {
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (rows ?? []).filter(
-      (r) => (favoritesOnly ? r.favorite : r.status === tab) && (!q || r.partner.username.toLowerCase().includes(q)),
+      (r) =>
+        (favoritesOnly ? r.favorite : r.status === tab) &&
+        (modeFilter === 'all' || isFriendMatch(r) === (modeFilter === 'friend')) &&
+        (!q || r.partner.username.toLowerCase().includes(q)),
     );
-  }, [rows, tab, favoritesOnly, search]);
+  }, [rows, tab, favoritesOnly, search, modeFilter]);
 
   const counts = useMemo(() => {
     const c: Record<MatchStatus, number> = { active: 0, inactive: 0, blocked: 0 };
-    (rows ?? []).forEach((r) => c[r.status]++);
+    (rows ?? []).forEach((r) => {
+      if (modeFilter === 'all' || isFriendMatch(r) === (modeFilter === 'friend')) c[r.status]++;
+    });
     return c;
-  }, [rows]);
+  }, [rows, modeFilter]);
 
   function open(r: MatchRow) {
     if (r.status === 'blocked') return Alert.alert('You have blocked this user');
@@ -141,6 +157,24 @@ export default function Matches() {
         </View>
       )}
 
+      <View style={styles.modes}>
+        {MODES.map((m) => {
+          const on = modeFilter === m.key;
+          return (
+            <Pressable
+              key={m.key}
+              onPress={() => setModeFilter(m.key)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              style={[styles.modeChip, { borderColor: t.primary, backgroundColor: on ? t.primary : 'transparent' }]}
+            >
+              {m.icon && <Ionicons name={m.icon} size={14} color={on ? t.onPrimary : t.primary} />}
+              <Text style={{ color: on ? t.onPrimary : t.primary, fontWeight: '600', fontSize: 13 }}>{m.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {rows === null && !error && <ActivityIndicator color={t.primary} size="large" style={{ marginTop: 48 }} />}
       {rows === null && error && (
         <Text style={{ color: t.text, textAlign: 'center', marginTop: 48 }}>Failed to load matches. Pull down to retry.</Text>
@@ -155,7 +189,7 @@ export default function Matches() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={{ color: t.textSecondary }}>
-                {rows?.length === 0 ? 'No match yet' : favoritesOnly ? 'No favorites yet.' : tab === 'active' ? 'No match yet' : 'Nothing here.'}
+                {rows?.length === 0 ? 'No match yet' : modeFilter !== 'all' && rows?.length ? `No ${modeFilter} matches here.` : favoritesOnly ? 'No favorites yet.' : tab === 'active' ? 'No match yet' : 'Nothing here.'}
               </Text>
             </View>
           }
@@ -168,9 +202,17 @@ export default function Matches() {
                 <Avatar uri={item.partner.photoUrl} name={item.partner.username} size={56} />
               </Pressable>
               <View style={{ flex: 1, marginHorizontal: 12 }}>
-                <Text style={{ color: t.text, fontWeight: '700', fontSize: 16 }} numberOfLines={1}>
-                  {item.partner.username}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ color: t.text, fontWeight: '700', fontSize: 16, flexShrink: 1 }} numberOfLines={1}>
+                    {item.partner.username}
+                  </Text>
+                  <Ionicons
+                    name={isFriendMatch(item) ? 'thumbs-up' : 'heart'}
+                    size={14}
+                    color={t.primary}
+                    accessibilityLabel={isFriendMatch(item) ? 'Friend match' : 'Dating match'}
+                  />
+                </View>
                 <Text style={{ color: t.textSecondary }} numberOfLines={1}>
                   {item.match.lastMessage}
                 </Text>
@@ -213,6 +255,8 @@ export default function Matches() {
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
   tabs: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 8 },
+  modes: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 8 },
+  modeChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 5 },
   tab: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },

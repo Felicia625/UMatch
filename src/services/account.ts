@@ -1,6 +1,7 @@
 import {
   arrayRemove,
   collection,
+  deleteField,
   doc,
   DocumentReference,
   getDocs,
@@ -44,7 +45,7 @@ export async function deleteAccount(password: string): Promise<void> {
   ]);
 
   const ops: Op[] = [];
-  likedBy.docs.forEach((d) => ops.push((b) => b.update(d.ref, { liked: arrayRemove(uid) })));
+  likedBy.docs.forEach((d) => ops.push((b) => b.update(d.ref, { liked: arrayRemove(uid), [`likeModes.${uid}`]: deleteField() })));
   passedBy.docs.forEach((d) => ops.push((b) => b.update(d.ref, { passed: arrayRemove(uid) })));
   blockedBy.docs.forEach((d) => ops.push((b) => b.update(d.ref, { blockedUsers: arrayRemove(uid) })));
 

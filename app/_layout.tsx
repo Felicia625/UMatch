@@ -5,13 +5,17 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { renderAppHeader } from '../src/components/AppHeader';
+import { renderStackHeader } from '../src/components/AppHeader';
 import { NotificationWatcher } from '../src/components/NotificationWatcher';
 import { useThemeSettings } from '../src/constants/theme';
 import { AuthProvider, isSignedIn, useAuth } from '../src/providers/AuthProvider';
 import { ThemeProvider } from '../src/providers/ThemeProvider';
 
 SplashScreen.preventAutoHideAsync();
+
+// When a stack screen is opened directly (browser refresh or a pasted link) the Tabs screen is still put underneath it,
+// so there is something to go back to.
+export const unstable_settings = { initialRouteName: '(tabs)' };
 
 // Replaces SplashActivity's "is there a current user?" check and the per-screen redirects in
 // OnboardingActivity / LoginActivity.
@@ -35,7 +39,7 @@ function AuthGate() {
     <>
       {/* White icons on the pink title bar (and in dark mode); dark icons only on the light login screens. */}
       <StatusBar style={darkMode || segments[0] !== '(auth)' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ header: renderAppHeader, contentStyle: { backgroundColor: theme.background } }}>
+      <Stack screenOptions={{ header: renderStackHeader, contentStyle: { backgroundColor: theme.background } }}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="terms" options={{ title: 'Terms and Conditions' }} />

@@ -55,6 +55,8 @@ export interface Match {
   users: [string, string];
   lastMessage: string;
   timestamp: Date | null;
+  /** Mode the match was formed in: true = Friend first, false = dating. Undefined on matches made before it was stored. */
+  friend?: boolean;
 }
 
 // matches/{matchId}/chats/{messageId}

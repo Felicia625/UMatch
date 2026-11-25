@@ -9,6 +9,7 @@ import {
   QueryConstraint,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -87,21 +88,31 @@ export async function loadCandidates(me: UserProfile): Promise<UserProfile[]> {
 
 export const matchIdFor = (a: string, b: string) => [a, b].sort().join('_'); // same id scheme as the Android app
 
+/** How a like is stored in `swipes/{uid}.likeModes[otherUid]`. */
+export const likeModeName = (friend: boolean): 'friend' | 'dating' => (friend ? 'friend' : 'dating');
+
 /**
  * Makes sure the match document exists (keeps the chat history if it already does).
- * `friend` records the mode the connection was formed in (true = Friend first), which the connections graph uses to
- * colour the line. It is only written when the match is created.
+ * `friend` is the mode of the like that makes (or re-makes) the match (true = Friend first). It colours the line in the
+ * connections graph. If the people matched before in another mode (they unliked each other and later liked again), the
+ * match switches to the new mode and the earlier modes stay in `modeHistory`; the chat is untouched.
  */
 export async function ensureMatch(a: string, b: string, friend = false): Promise<string> {
   const matchId = matchIdFor(a, b);
   const ref = doc(db, 'matches', matchId);
-  if (!(await getDoc(ref)).exists()) {
+  const snap = await getDoc(ref);
+  const entry = { mode: likeModeName(friend), at: Date.now() };
+  if (!snap.exists()) {
     await setDoc(ref, {
       users: [a, b],
       friend,
+      modeHistory: [entry],
       lastMessage: 'You matched! Say hi!',
       timestamp: serverTimestamp(),
     });
+  } else if (snap.data()?.friend !== friend) {
+    // Matches made before this field existed have no `friend`; their first mode is not known, so only the change is logged.
+    await updateDoc(ref, { friend, modeHistory: arrayUnion(entry) });
   }
   return matchId;
 }
@@ -120,7 +131,7 @@ export async function swipeUser(
     return {};
   }
 
-  await setDoc(mine, { liked: arrayUnion(otherId) }, { merge: true });
+  await setDoc(mine, { liked: arrayUnion(otherId), likeModes: { [otherId]: likeModeName(friend) } }, { merge: true });
 
   const theirs = await getDoc(doc(db, 'swipes', otherId));
   const theyLikedMe = ((theirs.data()?.liked as string[] | undefined) ?? []).includes(myId);
