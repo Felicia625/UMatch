@@ -16,7 +16,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '../components/Avatar';
 import { useTheme } from '../constants/theme';
 import { useAuth } from '../providers/AuthProvider';
@@ -33,7 +33,10 @@ import { formatTime } from '../utils/dates';
  * Used full screen on phones (route /chat/[matchId], header in the navigation bar) and as the right-hand panel on wide
  * screens (`embedded`, which draws its own header and calls onClose instead of going back).
  */
+export const PANEL_HEADER_HEIGHT = 56;
+
 export function ChatView({ matchId, embedded = false, onClose }: { matchId: string; embedded?: boolean; onClose?: () => void }) {
+  const insets = useSafeAreaInsets();
   const t = useTheme();
   const router = useRouter();
   const { user } = useAuth();
@@ -157,7 +160,7 @@ export function ChatView({ matchId, embedded = false, onClose }: { matchId: stri
   return (
     <SafeAreaView edges={embedded ? [] : ['bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: t.background }}>
       {embedded ? (
-        <View style={[styles.panelHeader, { backgroundColor: t.primary }]}>
+        <View style={[styles.panelHeader, { backgroundColor: t.primary, paddingTop: insets.top, minHeight: PANEL_HEADER_HEIGHT + insets.top }]}>
           <PartnerTitle />
         </View>
       ) : (
@@ -291,7 +294,8 @@ function Bubble({ message, mine, onLongPress }: { message: Message; mine: boolea
 }
 
 const styles = StyleSheet.create({
-  panelHeader: { paddingHorizontal: 16, paddingVertical: 10 },
+  // Same height as the title bar of the list on its left, so the two line up.
+  panelHeader: { paddingHorizontal: 16, justifyContent: 'center' },
   headerPartner: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   pinnedBar: { maxHeight: 110, paddingHorizontal: 16, paddingVertical: 6, borderBottomWidth: StyleSheet.hairlineWidth },
   bubble: { maxWidth: '80%', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 8 },

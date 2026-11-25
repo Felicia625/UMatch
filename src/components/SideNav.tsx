@@ -1,43 +1,57 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../constants/theme';
+import { withLeaveGuard } from '../utils/leaveGuard';
 
 export const SIDE_NAV_WIDTH = 64;
 
-// The parts of the react-navigation tab bar props used here (kept local so no extra package import is needed).
-interface RouteLike {
-  key: string;
-  name: string;
-}
-export interface SideNavProps {
-  state: { index: number; routes: RouteLike[] };
-  descriptors: Record<string, { options: { title?: string; tabBarLabel?: unknown; tabBarIcon?: unknown } }>;
-}
-
 type IconProps = { color: string; size: number; focused: boolean };
 
+export interface RailTab {
+  key: string;
+  label: string;
+  icon: (p: IconProps) => React.ReactNode;
+  active: boolean;
+  onPress: () => void;
+}
+
+/** The three main tabs, for screens outside the tab navigator (Guide, Settings) that still show the rail. */
+export const MAIN_TABS = [
+  { key: 'index', label: 'Home', path: '/', icon: (p: IconProps) => <Ionicons name="home" color={p.color} size={p.size} /> },
+  { key: 'matches', label: 'Matches', path: '/matches', icon: (p: IconProps) => <Ionicons name="chatbubbles" color={p.color} size={p.size} /> },
+  { key: 'profile', label: 'Profile', path: '/profile', icon: (p: IconProps) => <Ionicons name="person" color={p.color} size={p.size} /> },
+] as const;
+
 /**
- * Desktop navigation: a narrow rail on the left with the logo, the three tabs, a divider, then Guide and Settings.
- * Icons only; the name appears next to the icon while the cursor is over it.
+ * Desktop navigation rail: logo, the main tabs, a divider, then Guide and Settings. Icons only; the name appears next
+ * to the icon while the cursor is over it. `shortcut` marks Guide or Settings as the current page.
  */
-export function SideNav({ state, descriptors }: SideNavProps) {
+export function NavRail({ tabs, shortcut }: { tabs: RailTab[]; shortcut?: 'guide' | 'settings' }) {
   const t = useTheme();
   const router = useRouter();
+  const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const [hover, setHover] = useState<string | null>(null);
 
   const hoverProps = (id: string) =>
     Platform.OS === 'web' ? ({ onHoverIn: () => setHover(id), onHoverOut: () => setHover((h) => (h === id ? null : h)) } as object) : {};
 
+  // Guide and Settings replace each other instead of piling up on the stack.
+  const openShortcut = (path: '/guide' | '/settings') => {
+    if (pathname === path) return;
+    if (pathname === '/guide' || pathname === '/settings') router.replace(path);
+    else router.push(path);
+  };
+
   function item(id: string, label: string, icon: (color: string) => React.ReactNode, active: boolean, onPress: () => void) {
     return (
       <View key={id} style={[styles.itemWrap, { zIndex: hover === id ? 30 : 1 }]}>
         <Pressable
-          onPress={onPress}
+          onPress={() => withLeaveGuard(onPress)}
           accessibilityRole="button"
           accessibilityLabel={label}
           accessibilityState={{ selected: active }}
@@ -59,27 +73,12 @@ export function SideNav({ state, descriptors }: SideNavProps) {
     <View style={[styles.rail, { backgroundColor: t.surface, borderRightColor: t.outline, paddingTop: insets.top + 12 }]}>
       <Image source={require('../../assets/icon.png')} style={styles.logo} contentFit="cover" accessibilityLabel="UMatch" />
 
-      {state.routes.map((route, i) => {
-        const o = descriptors[route.key].options;
-        const label = typeof o.tabBarLabel === 'string' ? o.tabBarLabel : (o.title ?? route.name);
-        const focused = state.index === i;
-        const renderIcon = typeof o.tabBarIcon === 'function' ? (o.tabBarIcon as (p: IconProps) => React.ReactNode) : null;
-        return item(
-          route.key,
-          label,
-          (color) => renderIcon?.({ color, size: 24, focused }),
-          focused,
-          // Navigate by path (the navigation object is not the same in every router version), only if not already there.
-          () => {
-            if (!focused) router.navigate((route.name === 'index' ? '/' : `/${route.name}`) as never);
-          },
-        );
-      })}
+      {tabs.map((tab) => item(tab.key, tab.label, (color) => tab.icon({ color, size: 24, focused: tab.active }), tab.active, tab.onPress))}
 
       <View style={[styles.divider, { backgroundColor: t.outline }]} />
 
-      {item('guide', 'Guide', (c) => <Ionicons name="help-circle-outline" size={26} color={c} />, false, () => router.push('/guide'))}
-      {item('settings', 'Settings', (c) => <Ionicons name="settings-outline" size={24} color={c} />, false, () => router.push('/settings'))}
+      {item('guide', 'Guide', (c) => <Ionicons name="help-circle-outline" size={26} color={c} />, shortcut === 'guide', () => openShortcut('/guide'))}
+      {item('settings', 'Settings', (c) => <Ionicons name="settings-outline" size={24} color={c} />, shortcut === 'settings', () => openShortcut('/settings'))}
     </View>
   );
 }

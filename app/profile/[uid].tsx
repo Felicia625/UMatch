@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useDialog } from '../../src/components/AppDialog';
 import { HEADER_EDGES, Screen } from '../../src/components/ui';
 import { MAJORS } from '../../src/constants/options';
 import { PersonPlaceholder } from '../../src/components/Avatar';
@@ -19,6 +20,7 @@ import { UserProfile } from '../../src/types';
 export default function ProfileView() {
   const t = useTheme();
   const { user } = useAuth();
+  const { dialog, ask, notify } = useDialog();
   const { uid } = useLocalSearchParams<{ uid: string }>();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading');
@@ -61,10 +63,10 @@ export default function ProfileView() {
     try {
       const result = await swipeUser(user.uid, profile.uid, 'right', friend);
       setLiked(true);
-      if (result.matchId) Alert.alert(friend ? "You're now friends!" : "You're connected!", `You and ${profile.username} can chat now.`);
+      if (result.matchId) notify(friend ? "You're now friends!" : "You're connected!", `You and ${profile.username} can chat now.`, 'checkmark-circle-outline');
     } catch (e) {
       console.warn('Like failed', e);
-      Alert.alert("Couldn't like this person", 'Check your connection and try again.');
+      notify("Couldn't like this person", 'Check your connection and try again.', 'alert-circle-outline');
     } finally {
       setBusy(false);
     }
@@ -73,26 +75,27 @@ export default function ProfileView() {
   function unlikeWithConfirm() {
     if (!user || !profile) return;
     // Same as "Unlike" on the People I liked page: confirm, then remove only the like (it is not a pass).
-    Alert.alert(`Unlike ${profile.username}?`, 'This will remove them from your liked list.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Unlike',
-        style: 'destructive',
-        onPress: async () => {
-          setBusy(true);
-          try {
-            await unlikeUser(user.uid, profile.uid);
-            setLiked(false);
-            Alert.alert(`Unliked ${profile.username}`);
-          } catch (e) {
-            console.warn('Unlike failed', e);
-            Alert.alert('Something went wrong', 'Please try again.');
-          } finally {
-            setBusy(false);
-          }
-        },
+    ask({
+      title: `Unlike ${profile.username}?`,
+      message: 'This will remove them from your liked list.',
+      icon: 'heart-dislike-outline',
+      confirmLabel: 'Unlike',
+      cancelLabel: 'Cancel',
+      destructive: true,
+      onConfirm: async () => {
+        setBusy(true);
+        try {
+          await unlikeUser(user.uid, profile.uid);
+          setLiked(false);
+          notify(`Unliked ${profile.username}`, undefined, 'checkmark-circle-outline');
+        } catch (e) {
+          console.warn('Unlike failed', e);
+          notify('Something went wrong', 'Please try again.', 'alert-circle-outline');
+        } finally {
+          setBusy(false);
+        }
       },
-    ]);
+    });
   }
 
   const major = MAJORS.find((m) => m.code === profile?.major)?.label;
@@ -109,6 +112,18 @@ export default function ProfileView() {
       {state === 'missing' && <Text style={{ color: t.text, marginTop: 24 }}>User not found.</Text>}
       {state === 'ready' && profile && (
         <View style={{ alignItems: 'center', marginTop: 16 }}>
+          {!isSelf && !!me && !sameMode && (
+            <View style={[styles.modeNote, { backgroundColor: t.surfaceVariant, borderColor: t.primary }]}>
+              <Ionicons name="information-circle" size={22} color={t.primary} />
+              <Text style={{ flexShrink: 1, color: t.text, fontSize: 13, lineHeight: 19, textAlign: 'center' }}>
+                {profile.friendFirst
+                  ? `${profile.username} is in Friend first mode, so you can only like them when you are in Friend first mode too.`
+                  : me.friendFirst
+                    ? `${profile.username} is in Dating mode, so you can only like them when you turn Friend first mode off.`
+                    : `${profile.username} is in Dating mode, but you can only like people of the opposite gender in this mode.`}
+              </Text>
+            </View>
+          )}
           <View style={styles.photoWrap}>
             {profile.photoUrl ? (
               <Image source={{ uri: profile.photoUrl }} style={styles.photo} contentFit="cover" />
@@ -141,16 +156,7 @@ export default function ProfileView() {
             {profile.username}
             {profile.photoVerified ? '  ✓' : ''}
           </Text>
-          {!isSelf && !!me && !sameMode && (
-            <Text style={{ color: t.textSecondary, textAlign: 'center', marginTop: 6, fontSize: 13 }}>
-              {profile.friendFirst
-                ? `${profile.username} is in Friend first mode, so you can only like them when you are in Friend first mode too.`
-                : me.friendFirst
-                  ? `${profile.username} is in Dating mode, so you can only like them when you turn Friend first mode off.`
-                  : `${profile.username} is in Dating mode, but you can only like people of the opposite gender in this mode.`}
-            </Text>
-          )}
-          {!!profile.bio && <Text style={{ color: t.textSecondary, textAlign: 'center', marginVertical: 8 }}>{profile.bio}</Text>}
+          {!!profile.bio && <Text style={{ color: t.text, textAlign: 'center', marginTop: 8, fontSize: 15, lineHeight: 22 }}>{profile.bio}</Text>}
           <View style={{ alignSelf: 'stretch', marginTop: 16 }}>
             {rows.filter(([, v]) => !!v).map(([label, value]) => (
               <View key={label} style={[styles.row, { borderColor: t.outline }]}>
@@ -166,11 +172,13 @@ export default function ProfileView() {
           )}
         </View>
       )}
+      {dialog}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  modeNote: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'center', maxWidth: '100%', marginBottom: 16, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, borderLeftWidth: 4 },
   // Same shape as the discovery card: a large, nearly square photo instead of a small circle.
   photoWrap: { width: '100%', maxWidth: 420, aspectRatio: 1, borderRadius: 20, overflow: 'visible' },
   photo: { width: '100%', height: '100%', borderRadius: 20 },

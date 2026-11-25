@@ -3,7 +3,8 @@ import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from '
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Avatar } from '../../src/components/Avatar';
-import { ChatView } from '../../src/components/ChatView';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ChatView, PANEL_HEADER_HEIGHT } from '../../src/components/ChatView';
 import { TextField } from '../../src/components/ui';
 import { WIDE_SCREEN } from '../../src/constants/layout';
 import { useTheme } from '../../src/constants/theme';
@@ -33,6 +34,7 @@ const isFriendMatch = (r: MatchRow) => r.match.friend ?? r.partner.friendFirst =
 export default function Matches() {
   const t = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const myId = user?.uid;
   const { rows, error, refreshMeta } = useMatches(myId);
@@ -56,13 +58,15 @@ export default function Matches() {
   const navigation = useNavigation();
   useLayoutEffect(() => {
     navigation.setOptions({
+      // Wide screens draw their own title bar (list title + star on the left, the open chat's person on the right).
+      headerShown: !wide,
       headerRight: () => (
         <Pressable onPress={() => setFavoritesOnly((v) => !v)} hitSlop={10} accessibilityLabel="Show favorites">
           <Ionicons name={favoritesOnly ? 'star' : 'star-outline'} size={24} color={favoritesOnly ? '#FFE082' : '#FFFFFF'} />
         </Pressable>
       ),
     });
-  }, [navigation, favoritesOnly]);
+  }, [navigation, favoritesOnly, wide]);
 
   // A like-back or a new match can change who is "active", so re-read the lookups whenever the tab is shown.
   useFocusEffect(
@@ -138,7 +142,10 @@ export default function Matches() {
   const list = (
     <View style={{ flex: 1, backgroundColor: t.background }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <TextField placeholder="Search matches" value={search} onChangeText={setSearch} />
+        <View style={{ justifyContent: 'center' }}>
+          <Ionicons name="search" size={18} color={t.textSecondary} style={styles.searchIcon} />
+          <TextField placeholder="Search matches" value={search} onChangeText={setSearch} style={{ paddingLeft: 42 }} />
+        </View>
       </View>
 
       {!favoritesOnly && (
@@ -236,16 +243,35 @@ export default function Matches() {
   );
 
   if (!wide) return list;
+
+  // One title bar across the top: "Matches" and the favourites star on the left, the open chat's person on the right,
+  // with a clearly visible line between the two sections.
+  const barHeight = PANEL_HEADER_HEIGHT + insets.top;
   return (
     <View style={{ flex: 1, flexDirection: 'row', backgroundColor: t.background }}>
-      <View style={{ width: 380, borderRightWidth: StyleSheet.hairlineWidth, borderColor: t.outline }}>{list}</View>
+      <View style={{ width: 380 }}>
+        <View style={[styles.listBar, { backgroundColor: t.primary, height: barHeight, paddingTop: insets.top }]}>
+          <Text style={styles.listBarTitle}>Matches</Text>
+          <Pressable onPress={() => setFavoritesOnly((v) => !v)} hitSlop={10} accessibilityLabel="Show favorites">
+            <Ionicons name={favoritesOnly ? 'star' : 'star-outline'} size={24} color={favoritesOnly ? '#FFE082' : '#FFFFFF'} />
+          </Pressable>
+        </View>
+        {list}
+      </View>
+      <View style={{ width: 1 }}>
+        <View style={{ height: barHeight, backgroundColor: 'rgba(255,255,255,0.45)' }} />
+        <View style={{ flex: 1, backgroundColor: t.outline }} />
+      </View>
       <View style={{ flex: 1 }}>
         {selectedId ? (
           <ChatView key={selectedId} matchId={selectedId} embedded onClose={() => setSelectedId(null)} />
         ) : (
-          <View style={styles.empty}>
-            <Text style={{ color: t.textSecondary, fontSize: 16 }}>Select a conversation to start chatting</Text>
-          </View>
+          <>
+            <View style={{ height: barHeight, backgroundColor: t.primary }} />
+            <View style={styles.empty}>
+              <Text style={{ color: t.textSecondary, fontSize: 16 }}>Select a conversation to start chatting</Text>
+            </View>
+          </>
         )}
       </View>
     </View>
@@ -254,6 +280,9 @@ export default function Matches() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+  listBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
+  listBarTitle: { color: '#FFFFFF', fontSize: 20, fontWeight: '700' },
+  searchIcon: { position: 'absolute', left: 14, zIndex: 1 },
   tabs: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 8 },
   modes: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 8 },
   modeChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 5 },

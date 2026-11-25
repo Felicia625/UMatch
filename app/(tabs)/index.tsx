@@ -7,11 +7,11 @@ import { FilterModal } from '../../src/components/FilterModal';
 import { MatchModal } from '../../src/components/MatchModal';
 import { TutorialModal } from '../../src/components/TutorialModal';
 import { SwipeDeckHandle, UserSwipeDeck } from '../../src/components/UserSwipeDeck';
-import { Button } from '../../src/components/ui';
 import { GENDERS, MAJORS } from '../../src/constants/options';
 import { useTheme } from '../../src/constants/theme';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { LikeIcon } from '../../src/components/LikeIcon';
+import { Button } from '../../src/components/ui';
 import { loadCandidates, SwipeDirection, swipeUser } from '../../src/services/swipes';
 import { getUser, updateUser } from '../../src/services/users';
 import { Preferences, UserProfile } from '../../src/types';
@@ -25,14 +25,14 @@ const modeKey = (p: UserProfile) => `${p.friendFirst}|${JSON.stringify(p.prefere
 const DEFAULT_PREFERENCES: Preferences = { gender: 'F', yearPreferences: 'All', majorPreferences: [] };
 
 // Plain-language summary of who the deck is looking for, shown when nothing matches.
-function describeCriteria(p: Preferences, friendMode: boolean): string {
+function describeCriteria(p: Preferences, friendMode: boolean): string[] {
   return [
     friendMode ? 'Friends, any gender' : GENDERS.find((g) => g.code === p.gender)?.label ?? '',
     p.yearPreferences === 'All' ? 'any batch' : yearPreferenceLabel(p.yearPreferences).toLowerCase(),
     p.majorPreferences.length
       ? p.majorPreferences.map((c) => MAJORS.find((m) => m.code === c)?.label ?? c).join(', ')
       : 'any major',
-  ].join(' · ');
+  ];
 }
 
 export default function Home() {
@@ -158,12 +158,31 @@ export default function Home() {
 
   const empty = (
     <View style={styles.center}>
-      <Text style={{ color: t.text, fontSize: 18, fontWeight: '700' }}>No profiles to show</Text>
-      {prefs && <Text style={{ color: t.text, textAlign: 'center', marginTop: 8 }}>Showing: {describeCriteria(prefs, friendMode)}</Text>}
-      <Text style={{ color: t.textSecondary, textAlign: 'center', marginVertical: 8 }}>
-        Change who you want to connect with using the filter button at the top. Profiles you already liked or passed are not shown again.
-      </Text>
-      <Button title="Refresh" onPress={load} />
+      <View style={[styles.emptyCard, { backgroundColor: t.surface }]}>
+        <View style={[styles.emptyIcon, { backgroundColor: t.surfaceVariant }]}>
+          <Ionicons name="people-outline" size={44} color={t.primary} />
+        </View>
+        <Text style={{ color: t.text, fontSize: 20, fontWeight: '700', textAlign: 'center' }}>You're all caught up!</Text>
+        <Text style={{ color: t.textSecondary, textAlign: 'center', marginTop: 8, lineHeight: 20 }}>
+          No more profiles match your current filters. Try broadening your preferences or check back later!
+        </Text>
+        {prefs && (
+          <View style={styles.chips}>
+            {describeCriteria(prefs, friendMode).map((c) => (
+              <View key={c} style={[styles.chip, { backgroundColor: t.surfaceVariant }]}>
+                <Text style={{ color: t.primary, fontSize: 13, fontWeight: '600' }}>{c}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+        <View style={styles.emptyButtons}>
+          <Button title="Adjust filters" onPress={() => prefs && setFilterOpen(true)} icon={(c) => <Ionicons name="options" size={18} color={c} />} />
+          <Button title="Refresh" variant="outline" onPress={load} icon={(c) => <Ionicons name="refresh" size={18} color={c} />} />
+        </View>
+        <Text style={{ color: t.textSecondary, fontSize: 12, textAlign: 'center', marginTop: 14 }}>
+          Profiles you already liked or passed are not shown again.
+        </Text>
+      </View>
     </View>
   );
 
@@ -177,8 +196,18 @@ export default function Home() {
         )}
         {status === 'error' && (
           <View style={styles.center}>
-            <Text style={{ color: t.text, marginBottom: 8 }}>Failed to load profiles.</Text>
-            <Button title="Try again" onPress={load} />
+            <View style={[styles.emptyCard, { backgroundColor: t.surface }]}>
+              <View style={[styles.emptyIcon, { backgroundColor: t.surfaceVariant }]}>
+                <Ionicons name="cloud-offline-outline" size={44} color={t.primary} />
+              </View>
+              <Text style={{ color: t.text, fontSize: 20, fontWeight: '700', textAlign: 'center' }}>Couldn't load profiles</Text>
+              <Text style={{ color: t.textSecondary, textAlign: 'center', marginTop: 8, lineHeight: 20 }}>
+                Failed to load profiles. Check your connection, then tap Refresh or use the refresh button at the top to try again.
+              </Text>
+              <View style={styles.emptyButtons}>
+                <Button title="Refresh" onPress={load} icon={(c) => <Ionicons name="refresh" size={18} color={c} />} />
+              </View>
+            </View>
           </View>
         )}
         {status === 'ready' && <UserSwipeDeck key={deckKey} ref={deck} users={users} onSwipe={onSwipe} empty={empty} friendMode={friendMode} />}
@@ -222,6 +251,11 @@ export default function Home() {
 const styles = StyleSheet.create({
   deckArea: { flex: 1, marginHorizontal: 16, marginTop: 16, width: '100%', maxWidth: 460, alignSelf: 'center' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  emptyCard: { width: '100%', maxWidth: 420, borderRadius: 20, padding: 28, alignItems: 'center', elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+  emptyIcon: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 16 },
+  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
+  emptyButtons: { width: '100%', gap: 10, marginTop: 20 },
   actions: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 24, paddingVertical: 16 },
   round: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   roundSmall: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', elevation: 3, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },

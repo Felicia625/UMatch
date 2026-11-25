@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { usePathname, useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { WIDE_SCREEN } from '../constants/layout';
 import { useTheme } from '../constants/theme';
 import { isSignedIn, useAuth } from '../providers/AuthProvider';
+import { withLeaveGuard } from '../utils/leaveGuard';
 
 // Just the parts of the react-navigation header props we use, so this works for both the Stack and the Tabs.
 export interface HeaderProps {
@@ -17,7 +19,7 @@ const call = (fn: unknown, arg: unknown): ReactNode =>
   typeof fn === 'function' ? (fn as (a: unknown) => ReactNode)(arg) : null;
 
 /** Passed as `header` to the Stack and Tabs navigators; screens set their title with `title` / `headerTitle` / `headerRight`. */
-export function renderAppHeader({ options, route, back }: HeaderProps, hideShortcuts = false) {
+export function renderAppHeader({ options, route, back }: HeaderProps) {
   const title = typeof options.title === 'string' ? options.title : route.name;
   return (
     <AppHeader
@@ -25,7 +27,6 @@ export function renderAppHeader({ options, route, back }: HeaderProps, hideShort
       titleNode={call(options.headerTitle, { children: title, tintColor: '#FFFFFF' })}
       extra={call(options.headerRight, { tintColor: '#FFFFFF', canGoBack: !!back })}
       showBack={!!back}
-      hideShortcuts={hideShortcuts}
     />
   );
 }
@@ -44,27 +45,28 @@ export function AppHeader({
   titleNode,
   extra,
   showBack,
-  hideShortcuts = false,
 }: {
   title: string;
   titleNode?: ReactNode;
   extra?: ReactNode;
   showBack: boolean;
-  /** Desktop tabs: Guide and Settings are in the side navigation instead. */
-  hideShortcuts?: boolean;
 }) {
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const { user } = useAuth();
-  const signedIn = isSignedIn(user) && !hideShortcuts; // the Terms screen is also reachable signed out, without the help/settings buttons
+  // On a wide screen Guide and Settings are in the side navigation, so the title bar does not repeat them, and those two
+  // pages (reached from the navigation, not from another page) have no back button.
+  const wide = useWindowDimensions().width >= WIDE_SCREEN;
+  const onRailPage = pathname === '/guide' || pathname === '/settings';
+  const signedIn = isSignedIn(user) && !wide; // the Terms screen is also reachable signed out, without the help/settings buttons
 
   return (
     <View style={{ backgroundColor: t.primary, paddingTop: insets.top }}>
       <View style={styles.bar}>
-        {showBack && (
-          <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
+        {showBack && !(wide && onRailPage) && (
+          <Pressable onPress={() => withLeaveGuard(() => (router.canGoBack() ? router.back() : router.replace('/')))} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </Pressable>
         )}
@@ -77,12 +79,13 @@ export function AppHeader({
         </View>
         <View style={styles.actions}>
           {extra}
-          {signedIn && pathname !== '/guide' && (
+          {/* Guide and Settings never link to each other, so they cannot pile up on the stack. */}
+          {signedIn && pathname !== '/guide' && pathname !== '/settings' && (
             <Pressable onPress={() => router.push('/guide')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Guide">
               <Ionicons name="help-circle-outline" size={26} color="#FFFFFF" />
             </Pressable>
           )}
-          {signedIn && pathname !== '/settings' && (
+          {signedIn && pathname !== '/guide' && pathname !== '/settings' && (
             <Pressable onPress={() => router.push('/settings')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Settings">
               <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
             </Pressable>

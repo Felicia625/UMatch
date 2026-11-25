@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { renderStackHeader } from '../src/components/AppHeader';
+import { DesktopShell } from '../src/components/DesktopShell';
 import { NotificationWatcher } from '../src/components/NotificationWatcher';
 import { useThemeSettings } from '../src/constants/theme';
 import { AuthProvider, isSignedIn, useAuth } from '../src/providers/AuthProvider';
@@ -39,6 +40,7 @@ function AuthGate() {
     <>
       {/* White icons on the pink title bar (and in dark mode); dark icons only on the light login screens. */}
       <StatusBar style={darkMode || segments[0] !== '(auth)' ? 'light' : 'dark'} />
+      <DesktopShell>
       <Stack screenOptions={{ header: renderStackHeader, contentStyle: { backgroundColor: theme.background } }}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -51,6 +53,7 @@ function AuthGate() {
         <Stack.Screen name="lists/[kind]" options={{ title: '' }} />
         <Stack.Screen name="chat/[matchId]" options={{ title: 'Chat' }} />
       </Stack>
+      </DesktopShell>
     </>
   );
 }

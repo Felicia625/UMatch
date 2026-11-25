@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useDialog } from '../../src/components/AppDialog';
 import { Button, TextField } from '../../src/components/ui';
 import { PersonPlaceholder } from '../../src/components/Avatar';
 import { WIDE_SCREEN } from '../../src/constants/layout';
@@ -33,7 +34,7 @@ const CONFIG: Record<
     emptyHint: string;
     empty: string;
     action: string;
-    load: (myId: string) => Promise<{ users: UserProfile[]; otherMode?: number }>;
+    load: (myId: string) => Promise<{ users: UserProfile[]; otherMode?: number; likeModes?: Record<string, 'friend' | 'dating'> }>;
     run: (myId: string, otherId: string, friend: boolean) => Promise<string | void>;
     confirm?: (u: UserProfile) => { title: string; message: string };
     done: (u: UserProfile) => string;
@@ -57,7 +58,7 @@ const CONFIG: Record<
     emptyHint: 'Users you like will appear here',
     empty: "You haven't liked anyone yet.",
     action: 'Unlike',
-    load: async (id) => ({ users: await getUsersILiked(id) }),
+    load: getUsersILiked,
     run: unlikeUser,
     confirm: (u) => ({ title: `Unlike ${u.username}?`, message: 'This will remove them from your liked list.' }),
     done: (u) => `Unliked ${u.username}`,
@@ -82,11 +83,13 @@ export default function UserList() {
   const { kind } = useLocalSearchParams<{ kind: Kind }>();
   const cfg = CONFIG[kind] ?? CONFIG['my-likes'];
   const { width } = useWindowDimensions();
+  const { dialog, ask, notify } = useDialog();
   const columns = width >= WIDE_SCREEN ? 4 : 2; // phones keep two columns
 
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [me, setMe] = useState<UserProfile | null>(null);
+  const [likeModes, setLikeModes] = useState<Record<string, 'friend' | 'dating'>>({}); // "People I liked": the mode of each like
   const [otherMode, setOtherMode] = useState(0); // "Who liked me": people waiting in the other mode
   const [search, setSearch] = useState('');
   const [mutual, setMutual] = useState<Set<string>>(new Set()); // "Who liked me": people I like back, so already connected
@@ -102,6 +105,7 @@ export default function UserList() {
       ]);
       setMe(me);
       setOtherMode(list.otherMode ?? 0);
+      setLikeModes(list.likeModes ?? {});
       setUsers(list.users);
       setMutual(new Set(liked));
       setStatus('ready');
@@ -129,20 +133,25 @@ export default function UserList() {
       // "Who liked me" keeps everyone (a like back makes them mutual); the other lists drop the person.
       if (kind === 'liked-me') setMutual((s) => new Set(s).add(target.uid));
       else setUsers((list) => list.filter((u) => u.uid !== target.uid));
-      Alert.alert(cfg.done(target));
+      notify(cfg.done(target), undefined, 'checkmark-circle-outline');
     } catch (e) {
       console.warn(e);
-      Alert.alert('Something went wrong', 'Please try again.');
+      notify('Something went wrong', 'Please try again.', 'alert-circle-outline');
     }
   }
 
   function onAction(target: UserProfile) {
     const confirm = cfg.confirm?.(target);
     if (!confirm) return perform(target);
-    Alert.alert(confirm.title, confirm.message, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: cfg.action, style: 'destructive', onPress: () => perform(target) },
-    ]);
+    ask({
+      title: confirm.title,
+      message: confirm.message,
+      icon: 'heart-dislike-outline',
+      confirmLabel: cfg.action,
+      cancelLabel: 'Cancel',
+      destructive: true,
+      onConfirm: () => perform(target),
+    });
   }
 
   return (
@@ -223,6 +232,14 @@ export default function UserList() {
                 ) : (
                   <PersonPlaceholder style={styles.photo} iconSize={80} />
                 )}
+                {kind === 'my-likes' && !!likeModes[item.uid] && (
+                  <View style={[styles.modeBadge, { backgroundColor: t.surface }]}>
+                    <Ionicons name={likeModes[item.uid] === 'friend' ? 'thumbs-up' : 'heart'} size={13} color={t.primary} />
+                    <Text style={{ color: t.text, fontSize: 11, fontWeight: '600' }}>
+                      {likeModes[item.uid] === 'friend' ? 'Friend first' : 'Dating'}
+                    </Text>
+                  </View>
+                )}
                 <Text style={{ color: t.text, fontWeight: '700', padding: 8 }} numberOfLines={1}>
                   {item.username}
                   {item.age ? `, ${item.age}` : ''}
@@ -245,6 +262,7 @@ export default function UserList() {
           }
         />
       )}
+      {dialog}
     </View>
   );
 }
@@ -260,4 +278,5 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   card: { flex: 1, borderRadius: 16, overflow: 'hidden', marginBottom: 12 },
   photo: { width: '100%', aspectRatio: 1 },
+  modeBadge: { position: 'absolute', top: 8, left: 8, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, elevation: 2, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
 });

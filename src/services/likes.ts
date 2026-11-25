@@ -22,6 +22,7 @@ async function mySwipes(myId: string) {
   return {
     liked: (snap.data()?.liked as string[] | undefined) ?? [],
     passed: (snap.data()?.passed as string[] | undefined) ?? [],
+    likeModes: (snap.data()?.likeModes as Record<string, 'friend' | 'dating'> | undefined) ?? {},
   };
 }
 
@@ -36,20 +37,26 @@ export async function getMyLikedIds(myId: string): Promise<string[]> {
  * array-contains query does the same job on the server.
  */
 export async function getUsersWhoLikedMe(myId: string): Promise<{ users: UserProfile[]; otherMode: number }> {
-  const [likedMe, me] = await Promise.all([
+  const [likedMe, me, mine] = await Promise.all([
     getDocs(query(collection(db, 'swipes'), where('liked', 'array-contains', myId))),
     getUser(myId),
+    mySwipes(myId),
   ]);
   const users = await loadUsers(likedMe.docs.map((d) => d.id).filter((id) => id !== myId));
   if (!me) return { users, otherMode: 0 };
   // Only people in the same mode are listed. The others are counted so the screen can say how many are waiting in the
-  // other mode.
+  // other mode, but only those I have not liked back (someone I already like needs no reminder).
   const sameMode = users.filter((u) => isCompatible(me, u));
-  return { users: sameMode, otherMode: users.length - sameMode.length };
+  const waiting = users.filter((u) => !isCompatible(me, u) && !mine.liked.includes(u.uid));
+  return { users: sameMode, otherMode: waiting.length };
 }
 
-export async function getUsersILiked(myId: string): Promise<UserProfile[]> {
-  return loadUsers((await mySwipes(myId)).liked);
+/** Everyone I like, plus the mode each like was made in (likes made before modes were stored have no entry). */
+export async function getUsersILiked(
+  myId: string,
+): Promise<{ users: UserProfile[]; likeModes: Record<string, 'friend' | 'dating'> }> {
+  const mine = await mySwipes(myId);
+  return { users: await loadUsers(mine.liked), likeModes: mine.likeModes };
 }
 
 export async function getPassedUsers(myId: string): Promise<UserProfile[]> {

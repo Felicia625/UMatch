@@ -2,7 +2,8 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { setLeaveGuard } from '../../src/utils/leaveGuard';
+import { ActivityIndicator, Alert, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button, HEADER_EDGES, OptionPicker, Screen, TextField } from '../../src/components/ui';
 import { GENDERS, MAJORS, MIN_AGE, schoolYearOptions } from '../../src/constants/options';
 import { PersonPlaceholder } from '../../src/components/Avatar';
@@ -54,6 +55,15 @@ export default function EditProfile() {
       JSON.stringify(prefs) !== JSON.stringify(loaded.preference));
   const skipGuard = useRef(false);
   const [pendingLeave, setPendingLeave] = useState<{ type: string } | null>(null);
+  const [pendingGo, setPendingGo] = useState<(() => void) | null>(null); // a leave started from the app's own back button / navigation rail
+
+  // The title bar's back button and the desktop navigation rail ask through this guard while there are unsaved changes.
+  useEffect(() => {
+    if (!dirty) return;
+    const guard = (proceed: () => void) => setPendingGo(() => proceed);
+    setLeaveGuard(guard);
+    return () => setLeaveGuard(null);
+  }, [dirty]);
 
   useEffect(
     () =>
@@ -65,11 +75,40 @@ export default function EditProfile() {
     [navigation, dirty],
   );
 
+  // Website: refreshing, closing the tab or typing another address leaves the app without going through the navigator,
+  // so the browser's own "changes may not be saved" warning is used for those. The listener is registered once and
+  // reads the latest state from a ref, so it never depends on an effect re-running in time.
+  const dirtyRef = useRef(dirty);
+  dirtyRef.current = dirty;
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const warn = (e: BeforeUnloadEvent) => {
+      if (!dirtyRef.current || skipGuard.current) return;
+      e.preventDefault();
+      e.returnValue = ''; // required by some browsers to show the prompt
+      return '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, []);
+
   function discardAndLeave() {
-    if (!pendingLeave) return;
     skipGuard.current = true;
+    if (pendingGo) {
+      const go = pendingGo;
+      setLeaveGuard(null);
+      setPendingGo(null);
+      go();
+      return;
+    }
+    if (!pendingLeave) return;
     navigation.dispatch(pendingLeave as never);
     setPendingLeave(null);
+  }
+
+  function keepEditing() {
+    setPendingLeave(null);
+    setPendingGo(null);
   }
 
   useEffect(() => {
@@ -199,18 +238,23 @@ export default function EditProfile() {
           <Text style={[styles.section, { color: t.primary }]}>I want to connect with</Text>
           <PreferenceFields value={prefs} onChange={setPrefs} />
 
+          {dirty && (
+            <Text style={{ color: t.danger, fontSize: 13, textAlign: 'center', marginBottom: 8 }}>
+              You have unsaved changes. Tap Save to keep them.
+            </Text>
+          )}
           <Button title="Save" onPress={onSave} loading={saving} />
         </>
       )}
 
-      <Modal visible={!!pendingLeave} transparent animationType="fade" onRequestClose={() => setPendingLeave(null)}>
+      <Modal visible={!!pendingLeave || !!pendingGo} transparent animationType="fade" onRequestClose={keepEditing}>
         <View style={styles.backdrop}>
           <View style={[styles.dialog, { backgroundColor: t.surface }]}>
             <Text style={{ color: t.text, fontSize: 20, fontWeight: '800' }}>Discard changes?</Text>
             <Text style={{ color: t.textSecondary, marginVertical: 12, lineHeight: 21 }}>
               You have unsaved changes. If you leave now, they will be lost.
             </Text>
-            <Button title="Keep Editing" onPress={() => setPendingLeave(null)} />
+            <Button title="Keep Editing" onPress={keepEditing} />
             <Button title="Discard Changes" variant="outline" onPress={discardAndLeave} />
           </View>
         </View>
