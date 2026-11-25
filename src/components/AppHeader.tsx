@@ -17,7 +17,7 @@ const call = (fn: unknown, arg: unknown): ReactNode =>
   typeof fn === 'function' ? (fn as (a: unknown) => ReactNode)(arg) : null;
 
 /** Passed as `header` to the Stack and Tabs navigators; screens set their title with `title` / `headerTitle` / `headerRight`. */
-export function renderAppHeader({ options, route, back }: HeaderProps) {
+export function renderAppHeader({ options, route, back }: HeaderProps, hideShortcuts = false) {
   const title = typeof options.title === 'string' ? options.title : route.name;
   return (
     <AppHeader
@@ -25,6 +25,7 @@ export function renderAppHeader({ options, route, back }: HeaderProps) {
       titleNode={call(options.headerTitle, { children: title, tintColor: '#FFFFFF' })}
       extra={call(options.headerRight, { tintColor: '#FFFFFF', canGoBack: !!back })}
       showBack={!!back}
+      hideShortcuts={hideShortcuts}
     />
   );
 }
@@ -43,18 +44,21 @@ export function AppHeader({
   titleNode,
   extra,
   showBack,
+  hideShortcuts = false,
 }: {
   title: string;
   titleNode?: ReactNode;
   extra?: ReactNode;
   showBack: boolean;
+  /** Desktop tabs: Guide and Settings are in the side navigation instead. */
+  hideShortcuts?: boolean;
 }) {
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const { user } = useAuth();
-  const signedIn = isSignedIn(user); // the Terms screen is also reachable signed out, without the help/settings buttons
+  const signedIn = isSignedIn(user) && !hideShortcuts; // the Terms screen is also reachable signed out, without the help/settings buttons
 
   return (
     <View style={{ backgroundColor: t.primary, paddingTop: insets.top }}>

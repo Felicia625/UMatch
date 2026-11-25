@@ -3,6 +3,7 @@ import { Tabs } from 'expo-router';
 import { useWindowDimensions } from 'react-native';
 import { WIDE_SCREEN } from '../../src/constants/layout';
 import { renderAppHeader } from '../../src/components/AppHeader';
+import { SideNav } from '../../src/components/SideNav';
 import { useTheme } from '../../src/constants/theme';
 
 // Mirrors the bottom navigation in activity_main.xml: Home, Matches, Profile.
@@ -11,11 +12,16 @@ export default function TabsLayout() {
   const wide = useWindowDimensions().width >= WIDE_SCREEN;
   return (
     <Tabs
+      // `tabBar` is a prop of the navigator, not a screen option. Wide screens: a custom icon-only rail (logo, tabs,
+      // Guide, Settings). Phones keep the default bottom bar.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tabBar={wide ? (p: any) => <SideNav {...p} /> : undefined}
       screenOptions={{
         headerShown: true,
         // Wide screens: navigation on the left side instead of the bottom bar. Phones keep the bottom bar.
         tabBarPosition: wide ? 'left' : 'bottom',
-        header: renderAppHeader,
+        // On the rail Guide and Settings live in the navigation, so the title bar does not repeat them.
+        header: (p: Parameters<typeof renderAppHeader>[0]) => renderAppHeader(p, wide),
         tabBarActiveTintColor: t.primary,
         // Without this the inactive icons and labels use the navigation library's light-theme colour (dark grey),
         // which is nearly invisible on the dark tab bar.
