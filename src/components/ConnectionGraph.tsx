@@ -9,6 +9,7 @@ import { GraphData, loadGraph } from '../services/connections';
 import { Avatar } from './Avatar';
 
 const NODE = 44;
+const TIP_W = 200; // width available for the username bubble above a picture
 export const DATING_LINE = '#EC4899'; // pink: formed in the default mode
 export const FRIEND_LINE = '#F97316'; // orange: formed in Friend first mode
 const HIGHLIGHT = '#2563EB'; // blue border: you and the person whose graph this is
@@ -158,16 +159,17 @@ function GraphCanvas({ data, scale, height, centerId, viewerId, recenter }: { da
               {...(Platform.OS === 'web' ? ({ onHoverIn: () => hover(p.uid), onHoverOut: () => hover(null) } as object) : {})}
               delayLongPress={350}
               accessibilityLabel={profile?.username}
-              style={{ position: 'absolute', left: p.x * scale - size / 2, top: p.y * scale - size / 2 }}
+              style={{ position: 'absolute', left: p.x * scale - size / 2, top: p.y * scale - size / 2, zIndex: label === p.uid ? 10 : 0 }}
             >
               <View style={{ borderRadius: size, borderWidth: mark ? 3 : 2, borderColor: mark ? HIGHLIGHT : t.outline, backgroundColor: t.surface }}>
                 <Avatar uri={profile?.photoUrl} name={profile?.username} size={size - (mark ? 6 : 4)} />
               </View>
               {label === p.uid && (
-                <View style={[styles.tip, { backgroundColor: t.text, bottom: size + 4 }]}>
-                  <Text style={{ color: t.background, fontSize: 12, fontWeight: '700' }} numberOfLines={1}>
-                    {profile?.username}
-                  </Text>
+                // The wrapper is wider than the picture so a long username is shown in full (it wraps instead of being cut).
+                <View style={[styles.tipWrap, { bottom: size + 4, left: (size - TIP_W) / 2 }]} pointerEvents="none">
+                  <View style={[styles.tip, { backgroundColor: t.text }]}>
+                    <Text style={{ color: t.background, fontSize: 12, fontWeight: '700', textAlign: 'center' }}>{profile?.username}</Text>
+                  </View>
                 </View>
               )}
             </Pressable>
@@ -316,5 +318,6 @@ const styles = StyleSheet.create({
   note: { alignItems: 'center', justifyContent: 'center', padding: 24 },
   legend: { flexDirection: 'row', justifyContent: 'center', gap: 16, paddingTop: 6, paddingBottom: 4 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  tip: { position: 'absolute', alignSelf: 'center', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, maxWidth: 140, minWidth: 40 },
+  tipWrap: { position: 'absolute', width: TIP_W, alignItems: 'center' },
+  tip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, maxWidth: TIP_W },
 });

@@ -181,7 +181,7 @@ export default function Home() {
             <Button title="Try again" onPress={load} />
           </View>
         )}
-        {status === 'ready' && <UserSwipeDeck key={deckKey} ref={deck} users={users} onSwipe={onSwipe} empty={empty} />}
+        {status === 'ready' && <UserSwipeDeck key={deckKey} ref={deck} users={users} onSwipe={onSwipe} empty={empty} friendMode={friendMode} />}
       </View>
 
       {status === 'ready' && users.length > 0 && (

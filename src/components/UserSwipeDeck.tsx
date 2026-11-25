@@ -1,5 +1,6 @@
 import React, { forwardRef, useCallback, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Dimensions, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Extrapolation,
@@ -13,6 +14,7 @@ import Animated, {
 import { FILL } from '../constants/layout';
 import { SwipeDirection } from '../services/swipes';
 import { UserProfile } from '../types';
+import { LikeIcon } from './LikeIcon';
 import { UserCard } from './UserCard';
 
 // The card is at most ~460 wide, so on a desktop window the drag threshold and rotation follow the card, not the window.
@@ -31,10 +33,12 @@ interface Props {
   users: UserProfile[];
   onSwipe: (user: UserProfile, direction: SwipeDirection) => void;
   empty: React.ReactNode;
+  /** Mode of the person swiping: decides the icon of the like cue (heart or handshake). */
+  friendMode?: boolean;
 }
 
 /** Replaces the CardStackView library: drag a card, or call ref.swipe('left' | 'right') from buttons. */
-export const UserSwipeDeck = forwardRef<SwipeDeckHandle, Props>(function UserSwipeDeck({ users, onSwipe, empty }, ref) {
+export const UserSwipeDeck = forwardRef<SwipeDeckHandle, Props>(function UserSwipeDeck({ users, onSwipe, empty, friendMode = false }, ref) {
   const [index, setIndex] = useState(0);
   const x = useSharedValue(0);
   const y = useSharedValue(0);
@@ -108,11 +112,18 @@ export const UserSwipeDeck = forwardRef<SwipeDeckHandle, Props>(function UserSwi
   const nextStyle = useAnimatedStyle(() => ({
     transform: [{ scale: interpolate(Math.abs(x.value), [0, THRESHOLD], [0.95, 1], Extrapolation.CLAMP) }],
   }));
+  // A quiet cue while dragging: the card edge picks up a soft colour and a small round icon fades in. No text stamp.
   const likeStyle = useAnimatedStyle(() => ({
     opacity: interpolate(x.value, [0, THRESHOLD], [0, 1], Extrapolation.CLAMP),
   }));
   const nopeStyle = useAnimatedStyle(() => ({
     opacity: interpolate(x.value, [-THRESHOLD, 0], [1, 0], Extrapolation.CLAMP),
+  }));
+  const likeScale = useAnimatedStyle(() => ({
+    transform: [{ scale: interpolate(x.value, [0, THRESHOLD], [0.7, 1], Extrapolation.CLAMP) }],
+  }));
+  const nopeScale = useAnimatedStyle(() => ({
+    transform: [{ scale: interpolate(x.value, [-THRESHOLD, 0], [1, 0.7], Extrapolation.CLAMP) }],
   }));
 
   const top = users[index];
@@ -129,11 +140,13 @@ export const UserSwipeDeck = forwardRef<SwipeDeckHandle, Props>(function UserSwi
       <GestureDetector gesture={pan}>
         <Animated.View key={`top-${top.uid}`} style={[styles.card, topStyle]}>
           <UserCard user={top} />
-          <Animated.View style={[styles.badge, styles.likeBadge, likeStyle]} pointerEvents="none">
-            <Text style={[styles.badgeText, { color: '#2E7D32' }]}>LIKE</Text>
+          <Animated.View style={[styles.wash, { backgroundColor: 'rgba(46,125,50,0.22)' }, likeStyle]} pointerEvents="none" />
+          <Animated.View style={[styles.wash, { backgroundColor: 'rgba(211,47,47,0.22)' }, nopeStyle]} pointerEvents="none" />
+          <Animated.View style={[styles.cue, { left: 20 }, likeStyle, likeScale]} pointerEvents="none">
+            <LikeIcon friend={friendMode} size={26} color="#2E7D32" />
           </Animated.View>
-          <Animated.View style={[styles.badge, styles.nopeBadge, nopeStyle]} pointerEvents="none">
-            <Text style={[styles.badgeText, { color: '#D32F2F' }]}>NOPE</Text>
+          <Animated.View style={[styles.cue, { right: 20 }, nopeStyle, nopeScale]} pointerEvents="none">
+            <Ionicons name="close" size={30} color="#D32F2F" />
           </Animated.View>
         </Animated.View>
       </GestureDetector>
@@ -144,8 +157,15 @@ export const UserSwipeDeck = forwardRef<SwipeDeckHandle, Props>(function UserSwi
 const styles = StyleSheet.create({
   container: { flex: 1 },
   card: { ...FILL },
-  badge: { position: 'absolute', top: 32, borderWidth: 4, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 4 },
-  likeBadge: { left: 24, borderColor: '#2E7D32', transform: [{ rotate: '-15deg' }] },
-  nopeBadge: { right: 24, borderColor: '#D32F2F', transform: [{ rotate: '15deg' }] },
-  badgeText: { fontSize: 32, fontWeight: '900' },
+  wash: { ...StyleSheet.absoluteFillObject, borderRadius: 20 },
+  cue: {
+    position: 'absolute',
+    top: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.92)',
+  },
 });
