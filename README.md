@@ -1,8 +1,10 @@
 # UMatch
 
+<img width="1265" height="1044" alt="logo" src="https://github.com/user-attachments/assets/e7423fb3-d7ad-47ea-87e1-75800ae0c5b3" />
+
+
 UMatch is a mobile and web app for Universitas Multimedia Nusantara (UMN) students to meet each other, either by **matching** (the default mode) or as **friends** (Friend Mode). It is a rewrite of the original native Android (Kotlin) app in **React Native with Expo and TypeScript**, using **Firebase** for the backend.
 
-> Course project: IF670 / IF671 Mobile Cross-Platform Programming, Kelompok 1 (UMatch).
 
 ## Features
 
