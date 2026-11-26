@@ -1,7 +1,7 @@
-import { createSim } from '../../src/utils/forceLayout';
+import { createSim, shortestPath } from '../../src/utils/forceLayout';
 
-const ring = (ids: string[], r: number) =>
-  ids.map((id, i) => ({ id, x: Math.cos((2 * Math.PI * i) / ids.length) * r, y: Math.sin((2 * Math.PI * i) / ids.length) * r }));
+const ring = (ids: string[], r: number, nodeR = 20) =>
+  ids.map((id, i) => ({ id, x: Math.cos((2 * Math.PI * i) / ids.length) * r, y: Math.sin((2 * Math.PI * i) / ids.length) * r, r: nodeR }));
 
 describe('createSim', () => {
   const ids = ['me', 'a', 'b', 'c', 'd', 'e'];
@@ -17,9 +17,9 @@ describe('createSim', () => {
     expect(sim.energy()).toBeLessThan(0.5);
   });
 
-  it('keeps nodes apart', () => {
-    const sim = createSim(ring(ids, 90), edges);
-    for (const a of sim.nodes) for (const b of sim.nodes) if (a !== b) expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThan(20);
+  it('never lets two pictures overlap', () => {
+    const sim = createSim(ring(ids, 90, 30), edges);
+    for (const a of sim.nodes) for (const b of sim.nodes) if (a !== b) expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThan(a.r + b.r);
   });
 
   it('is the same every time for the same seeds', () => {
@@ -46,5 +46,19 @@ describe('createSim', () => {
   it('with one node stays finite', () => {
     const sim = createSim([{ id: 'only', x: 0, y: 0 }], []);
     expect(Number.isFinite(sim.nodes[0].x)).toBe(true);
+  });
+});
+
+describe('shortestPath', () => {
+  const edges: [string, string][] = [['me', 'a'], ['me', 'b'], ['a', 'c'], ['c', 'd'], ['b', 'd'], ['x', 'y']];
+  it('finds the shortest chain', () => {
+    expect(shortestPath(edges, 'd', 'me')).toEqual(['d', 'b', 'me']);
+    expect(shortestPath(edges, 'c', 'me')).toEqual(['c', 'a', 'me']);
+  });
+  it('is just the node when it is the target', () => {
+    expect(shortestPath(edges, 'me', 'me')).toEqual(['me']);
+  });
+  it('is empty when there is no connection', () => {
+    expect(shortestPath(edges, 'x', 'me')).toEqual([]);
   });
 });

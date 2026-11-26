@@ -1,181 +1,387 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ComponentRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as ScreenOrientation from 'expo-screen-orientation';
-import { ActivityIndicator, Modal, PanResponder, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, GestureResponderEvent, Modal, PanResponder, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../constants/theme';
 import { GraphData, loadGraph } from '../services/connections';
+import { createSim, shortestPath } from '../utils/forceLayout';
 import { Avatar } from './Avatar';
 
-const NODE = 44;
 const TIP_W = 200; // width available for the username bubble above a picture
 export const DATING_LINE = '#EC4899'; // pink: formed in the default mode
 export const FRIEND_LINE = '#F97316'; // orange: formed in Friend first mode
 const HIGHLIGHT = '#2563EB'; // blue border: you and the person whose graph this is
-const PAD = 40;
+const MIN_SCALE = 0.4;
+const MAX_SCALE = 3;
+const HOLD_MS = 400; // holding a picture this long shows the name instead of opening the profile
 
-interface Placed {
-  uid: string;
-  x: number;
-  y: number;
-  level: 0 | 1 | 2;
-}
+/** Picture size follows the number of connections: more connections, bigger picture. */
+const sizeFor = (connections: number) => 30 + Math.min(connections, 8) * 4;
 
-/** Radial layout: the person in the middle, their matches on a ring, matches of those people just outside. */
-function layout(data: GraphData): { placed: Placed[]; width: number; height: number } {
+/** Starting points for the physics: the person in the middle, matches on a ring, their matches a bit further out. */
+function seedsFor(data: GraphData, sizeOf: (id: string) => number) {
+  const at = (id: string, x: number, y: number) => ({ id, x, y, r: sizeOf(id) / 2 });
+  const seeds = [at(data.nodes[0].uid, 0, 0)];
   const l1 = data.nodes.filter((n) => n.level === 1);
-  const l2 = data.nodes.filter((n) => n.level === 2);
-  const r1 = Math.max(110, l1.length * 20);
-  const pos = new Map<string, Placed>();
-  pos.set(data.nodes[0].uid, { uid: data.nodes[0].uid, x: 0, y: 0, level: 0 });
   const angleOf = new Map<string, number>();
   l1.forEach((n, i) => {
-    // Two people would sit exactly opposite each other, so a line between them would run through the middle person and
-    // hide behind the other lines. Put them side by side instead (a triangle).
-    const a =
-      l1.length === 2
-        ? (i === 0 ? -5 : -1) * (Math.PI / 6)
-        : (2 * Math.PI * i) / Math.max(l1.length, 1) - Math.PI / 2;
+    const a = (2 * Math.PI * i) / Math.max(l1.length, 1) - Math.PI / 2;
     angleOf.set(n.uid, a);
-    pos.set(n.uid, { uid: n.uid, x: Math.cos(a) * r1, y: Math.sin(a) * r1, level: 1 });
+    seeds.push(at(n.uid, Math.cos(a) * 110, Math.sin(a) * 110));
   });
-  const byParent = new Map<string, typeof l2>();
-  l2.forEach((n) => byParent.set(n.parent ?? '', [...(byParent.get(n.parent ?? '') ?? []), n]));
-  byParent.forEach((kids, parent) => {
+  const kidsOf = new Map<string, string[]>();
+  data.nodes.filter((n) => n.level === 2).forEach((n) => kidsOf.set(n.parent ?? '', [...(kidsOf.get(n.parent ?? '') ?? []), n.uid]));
+  kidsOf.forEach((kids, parent) => {
     const base = angleOf.get(parent) ?? 0;
-    const spread = Math.min(1.2, 0.32 * kids.length);
-    const r2 = r1 + 90 + Math.max(0, kids.length - 3) * 10;
-    kids.forEach((n, i) => {
-      const a = kids.length === 1 ? base : base - spread / 2 + (spread * i) / (kids.length - 1);
-      pos.set(n.uid, { uid: n.uid, x: Math.cos(a) * r2, y: Math.sin(a) * r2, level: 2 });
+    kids.forEach((id, i) => {
+      const a = base + (i - (kids.length - 1) / 2) * 0.35;
+      seeds.push(at(id, Math.cos(a) * 210, Math.sin(a) * 210));
     });
   });
-  const all = [...pos.values()];
-  const minX = Math.min(...all.map((p) => p.x)) - NODE / 2 - PAD;
-  const minY = Math.min(...all.map((p) => p.y)) - NODE / 2 - PAD;
-  const maxX = Math.max(...all.map((p) => p.x)) + NODE / 2 + PAD;
-  const maxY = Math.max(...all.map((p) => p.y)) + NODE / 2 + PAD;
-  return {
-    placed: all.map((p) => ({ ...p, x: p.x - minX, y: p.y - minY })),
-    width: maxX - minX,
-    height: maxY - minY,
-  };
+  return seeds;
 }
 
-/** The graph itself: pictures only; long press (right-click / hover on the web) a picture to see the username, tap it to open the profile. */
-function GraphCanvas({ data, scale, height, centerId, viewerId, recenter }: { data: GraphData; scale: number; height: number; centerId: string; viewerId: string; recenter: number }) {
+interface DotProps {
+  id: string;
+  x: number; // screen position of the centre
+  y: number;
+  size: number;
+  marked: boolean; // you and the inspected person get the blue border
+  hovered: boolean;
+  dim: boolean;
+  name: string;
+  photoUrl?: string;
+  onDragStart: (id: string) => void;
+  onDrag: (id: string, dx: number, dy: number) => void;
+  onDragEnd: (id: string, tap: boolean) => void;
+  onHover: (id: string | null) => void;
+}
+
+/** One person: the picture. Drag it to move it, tap / click it to open the profile, hover / hold it to see the name. */
+function Person(props: DotProps) {
   const t = useTheme();
-  const router = useRouter();
-  const [label, setLabel] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [view, setView] = useState({ w: 0, h: height });
-  // Drag to move the graph around (no scroll bars). The offset is clamped so the graph can't be lost off-screen.
-  const [off, setOff] = useState({ x: 0, y: 0 });
-  const offRef = useRef(off);
-  offRef.current = off;
-  const start = useRef({ x: 0, y: 0 });
-  useEffect(() => setOff({ x: 0, y: 0 }), [recenter]); // the "back to the middle" button
-  const sizeRef = useRef({ W: 0, H: 0, vw: 0, vh: 0 });
-  const g = useMemo(() => layout(data), [data]);
-  const W = g.width * scale;
-  const H = g.height * scale;
-  const at = useMemo(() => new Map(g.placed.map((p) => [p.uid, p])), [g]);
-  const size = NODE * scale;
-  sizeRef.current = { W, H, vw: view.w, vh: view.h };
+  const latest = useRef(props);
+  latest.current = props;
+  const ref = useRef<ComponentRef<typeof View>>(null);
+  const gesture = useRef({ moved: false, at: 0 });
   const pan = useMemo(() => {
-    const clamp = (v: number, content: number, viewport: number) => {
-      const limit = Math.max(content, viewport) / 2;
-      return Math.max(-limit, Math.min(limit, v));
+    const end = () => {
+      const g = gesture.current;
+      latest.current.onDragEnd(latest.current.id, !g.moved && Date.now() - g.at < HOLD_MS);
     };
     return PanResponder.create({
-      // Take over only once the finger has really moved, so a tap or a long press on a picture still works.
-      onMoveShouldSetPanResponderCapture: (_e, g) => Math.abs(g.dx) + Math.abs(g.dy) > 6,
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
       onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: () => {
-        start.current = offRef.current;
+        gesture.current = { moved: false, at: Date.now() };
+        latest.current.onDragStart(latest.current.id);
       },
       onPanResponderMove: (_e, g) => {
-        const { W: w, H: h, vw, vh } = sizeRef.current;
-        setOff({ x: clamp(start.current.x + g.dx, w, vw), y: clamp(start.current.y + g.dy, h, vh) });
+        if (!gesture.current.moved && Math.abs(g.dx) + Math.abs(g.dy) <= 5) return; // still a tap or a hold
+        gesture.current.moved = true;
+        latest.current.onDrag(latest.current.id, g.dx, g.dy);
       },
+      onPanResponderRelease: end,
+      onPanResponderTerminate: end,
     });
   }, []);
 
-  useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
-  // On the website the username shows while the cursor is over a picture.
-  function hover(uid: string | null) {
-    if (timer.current) clearTimeout(timer.current);
-    setLabel(uid);
-  }
-  function showLabel(uid: string) {
-    setLabel(uid);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setLabel(null), 3000);
-  }
+  // Website: light up the way to the centre while the cursor is over this picture.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return undefined;
+    const el = ref.current as unknown as HTMLElement | null;
+    if (!el || typeof el.addEventListener !== 'function') return undefined;
+    const enter = () => latest.current.onHover(latest.current.id);
+    const leave = () => latest.current.onHover(null);
+    const noNativeDrag = (e: Event) => e.preventDefault();
+    el.addEventListener('mouseenter', enter);
+    el.addEventListener('mouseleave', leave);
+    el.addEventListener('dragstart', noNativeDrag);
+    return () => {
+      el.removeEventListener('mouseenter', enter);
+      el.removeEventListener('mouseleave', leave);
+      el.removeEventListener('dragstart', noNativeDrag);
+    };
+  }, []);
+
+  const { size, marked } = props;
+  return (
+    <View
+      ref={ref}
+      {...pan.panHandlers}
+      accessibilityLabel={props.name}
+      style={[
+        { position: 'absolute', left: props.x - size / 2, top: props.y - size / 2, opacity: props.dim ? 0.35 : 1, zIndex: props.hovered ? 20 : props.dim ? 0 : 5 },
+        Platform.OS === 'web' ? ({ cursor: 'pointer', userSelect: 'none' } as object) : null,
+      ]}
+    >
+      {/* pointerEvents none: the browser's own picture dragging (the ghost image) must not start, our drag handles it. */}
+      <View pointerEvents="none" style={{ borderRadius: size, borderWidth: marked ? 3 : 2, borderColor: marked ? HIGHLIGHT : t.outline, backgroundColor: t.surface }}>
+        <Avatar uri={props.photoUrl} name={props.name} size={size - (marked ? 6 : 4)} />
+      </View>
+      {props.hovered && (
+        // The wrapper is wider than the picture so a long username is shown in full (it wraps instead of being cut).
+        <View style={[styles.tipWrap, { bottom: size + 4, left: (size - TIP_W) / 2 }]} pointerEvents="none">
+          <View style={[styles.tip, { backgroundColor: t.text }]}>
+            <Text style={{ color: t.background, fontSize: 12, fontWeight: '700', textAlign: 'center' }}>{props.name}</Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const touchDistance = (e: GestureResponderEvent) => {
+  const [a, b] = e.nativeEvent.touches;
+  return Math.hypot(a.pageX - b.pageX, a.pageY - b.pageY);
+};
+
+/**
+ * The graph, in the style of Obsidian's graph view: pictures that settle by themselves (a small physics simulation).
+ * Drag a picture and the others follow, drag the background to move around, scroll (website) or pinch (phone, full
+ * screen) or use the buttons to zoom. Hovering (website) or holding / dragging (phone) a picture lights up the
+ * shortest way from that person to the person in the middle. Tap it to open the profile.
+ */
+function GraphCanvas({
+  data, scale, height, centerId, viewerId, recenter, onZoom, onScale, pinchZoom,
+}: {
+  data: GraphData; scale: number; height: number; centerId: string; viewerId: string; recenter: number;
+  onZoom: (delta: number) => void; onScale: (value: number) => void; pinchZoom: boolean;
+}) {
+  const router = useRouter();
+  const [view, setView] = useState({ w: 0, h: height });
+  const [hover, setHover] = useState<string | null>(null);
+  const [, setFrame] = useState(0);
+  const [off, setOff] = useState({ x: 0, y: 0 });
+  const offRef = useRef(off);
+  offRef.current = off;
+  const panStart = useRef({ x: 0, y: 0 });
+  const box = useRef<ComponentRef<typeof View>>(null);
+
+  const edgePairs = useMemo(() => data.edges.map((e) => [e.a, e.b] as [string, string]), [data]);
+  const degree = useMemo(() => {
+    const d = new Map<string, number>();
+    edgePairs.forEach(([a, b]) => {
+      d.set(a, (d.get(a) ?? 0) + 1);
+      d.set(b, (d.get(b) ?? 0) + 1);
+    });
+    return d;
+  }, [edgePairs]);
+  const sizeOf = useCallback((id: string) => sizeFor(degree.get(id) ?? 0), [degree]);
+  const { sim, extent } = useMemo(() => {
+    const sim = createSim(seedsFor(data, sizeOf), edgePairs);
+    const mid = sim.byId.get(centerId) ?? sim.nodes[0];
+    return { sim, extent: Math.max(60, ...sim.nodes.map((n) => Math.hypot(n.x - mid.x, n.y - mid.y) + n.r)) };
+  }, [data, edgePairs, sizeOf, centerId]);
+
+  // Fit the graph to the box, then apply the user's zoom on top.
+  const fit = Math.max(0.4, Math.min(1.6, Math.min(view.w / 2 - 20, view.h / 2 - 20) / extent));
+  const s = fit * scale;
+  const sRef = useRef(s);
+  sRef.current = s;
+  const scaleRef = useRef(scale);
+  scaleRef.current = scale;
+  const limitRef = useRef({ x: 0, y: 0 });
+  limitRef.current = { x: extent * s + view.w / 2, y: extent * s + view.h / 2 };
+
+  // The person in the middle is always the centre of the view: at the start, and whenever "back to the center" is pressed.
+  useEffect(() => {
+    const mid = sim.byId.get(centerId);
+    if (mid && view.w > 0) setOff({ x: -mid.x * sRef.current, y: -mid.y * sRef.current });
+  }, [recenter, sim, centerId, view.w > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Animation: runs while something is dragged or the pictures are still moving, then stops by itself.
+  const running = useRef(false);
+  const dragging = useRef(0);
+  const raf = useRef<number | null>(null);
+  const kick = useCallback(() => {
+    if (running.current) return;
+    running.current = true;
+    const loop = () => {
+      sim.step();
+      setFrame((n) => n + 1);
+      if (dragging.current > 0 || sim.energy() > 0.05) raf.current = requestAnimationFrame(loop);
+      else {
+        running.current = false;
+        raf.current = null;
+      }
+    };
+    raf.current = requestAnimationFrame(loop);
+  }, [sim]);
+  useEffect(
+    () => () => {
+      if (raf.current !== null) cancelAnimationFrame(raf.current);
+      raf.current = null;
+      running.current = false;
+      dragging.current = 0;
+    },
+    [sim],
+  );
+
+  const pinch = useRef({ active: false, d0: 1, s0: 1 });
+  const dragFrom = useRef({ x: 0, y: 0 });
+  const onDragStart = useCallback(
+    (id: string) => {
+      const n = sim.byId.get(id);
+      if (!n) return;
+      n.pinned = true;
+      dragFrom.current = { x: n.x, y: n.y };
+      dragging.current += 1;
+      setHover(id);
+      kick();
+    },
+    [sim, kick],
+  );
+  const onDrag = useCallback(
+    (id: string, dx: number, dy: number) => {
+      const n = sim.byId.get(id);
+      if (!n || pinch.current.active) return;
+      n.x = dragFrom.current.x + dx / sRef.current;
+      n.y = dragFrom.current.y + dy / sRef.current;
+    },
+    [sim],
+  );
+  const onDragEnd = useCallback(
+    (id: string, tap: boolean) => {
+      const n = sim.byId.get(id);
+      if (n) {
+        n.pinned = false;
+        if (tap) {
+          n.x = dragFrom.current.x;
+          n.y = dragFrom.current.y;
+        }
+      }
+      dragging.current = Math.max(0, dragging.current - 1);
+      if (Platform.OS !== 'web') setHover(null);
+      if (tap && id !== centerId) router.push(`/profile/${id}`);
+      kick();
+    },
+    [sim, kick, router, centerId],
+  );
+
+  // Dragging the background moves the whole graph (kept within reach so it cannot be lost off-screen).
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderGrant: () => {
+          panStart.current = offRef.current;
+        },
+        onPanResponderMove: (_e, g) => {
+          if (pinch.current.active) return;
+          const lim = limitRef.current;
+          setOff({
+            x: Math.max(-lim.x, Math.min(lim.x, panStart.current.x + g.dx)),
+            y: Math.max(-lim.y, Math.min(lim.y, panStart.current.y + g.dy)),
+          });
+        },
+      }),
+    [],
+  );
+
+  // Two fingers anywhere on the graph zoom it (full screen only, so the page can still scroll normally).
+  const touchStart = (e: GestureResponderEvent) => {
+    if (!pinchZoom || e.nativeEvent.touches.length !== 2) return;
+    pinch.current = { active: true, d0: Math.max(1, touchDistance(e)), s0: scaleRef.current };
+  };
+  const touchMove = (e: GestureResponderEvent) => {
+    if (!pinch.current.active || e.nativeEvent.touches.length !== 2) return;
+    onScale(pinch.current.s0 * (touchDistance(e) / pinch.current.d0));
+  };
+  const touchEnd = (e: GestureResponderEvent) => {
+    if (e.nativeEvent.touches.length < 2) pinch.current.active = false;
+  };
+
+  // Website: the mouse wheel zooms.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return undefined;
+    const el = box.current as unknown as HTMLElement | null;
+    if (!el || typeof el.addEventListener !== 'function') return undefined;
+    const wheel = (e: WheelEvent) => {
+      e.preventDefault();
+      onZoom(e.deltaY < 0 ? 0.15 : -0.15);
+    };
+    el.addEventListener('wheel', wheel, { passive: false });
+    return () => el.removeEventListener('wheel', wheel);
+  }, [onZoom]);
+
+  // The way from the picture under the cursor / finger to the person in the middle.
+  const path = useMemo(() => (hover ? shortestPath(edgePairs, hover, centerId) : []), [hover, edgePairs, centerId]);
+  const onPath = useMemo(() => new Set(hover ? (path.length ? path : [hover]) : []), [hover, path]);
+  const litEdges = useMemo(() => {
+    const keys = new Set<string>();
+    for (let i = 0; i + 1 < path.length; i++) keys.add([path[i], path[i + 1]].sort().join('|'));
+    return keys;
+  }, [path]);
+
+  const cx = view.w / 2 + off.x;
+  const cy = view.h / 2 + off.y;
 
   return (
     <View
+      ref={box}
       {...pan.panHandlers}
+      onTouchStart={touchStart}
+      onTouchMove={touchMove}
+      onTouchEnd={touchEnd}
+      onTouchCancel={touchEnd}
       style={[{ height, overflow: 'hidden' }, Platform.OS === 'web' ? ({ cursor: 'grab', userSelect: 'none', touchAction: 'none' } as object) : null]}
       onLayout={(e) => setView({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
     >
-      <View style={{ position: 'absolute', width: W, height: H, left: view.w / 2 - W / 2 + off.x, top: view.h / 2 - H / 2 + off.y }}>
-        {data.edges.map(({ a, b, friend }) => {
-          const p = at.get(a);
-          const q = at.get(b);
-          if (!p || !q) return null;
-          const x1 = p.x * scale;
-          const y1 = p.y * scale;
-          const x2 = q.x * scale;
-          const y2 = q.y * scale;
-          const len = Math.hypot(x2 - x1, y2 - y1);
-          return (
-            <View
-              key={`${a}-${b}`}
-              pointerEvents="none"
-              style={{
-                position: 'absolute',
-                left: (x1 + x2) / 2 - len / 2,
-                top: (y1 + y2) / 2 - 1,
-                width: len,
-                height: 2,
-                borderRadius: 1,
-                backgroundColor: friend ? FRIEND_LINE : DATING_LINE,
-                transform: [{ rotate: `${Math.atan2(y2 - y1, x2 - x1)}rad` }],
-              }}
-            />
-          );
-        })}
-        {g.placed.map((p) => {
-          const profile = data.profiles[p.uid];
-          const isCenter = p.uid === centerId;
-          const mark = isCenter || p.uid === viewerId; // you and the inspected person get the blue border
-          return (
-            <Pressable
-              key={p.uid}
-              onPress={() => !isCenter && router.push(`/profile/${p.uid}`)}
-              onLongPress={() => showLabel(p.uid)}
-              {...(Platform.OS === 'web' ? ({ onHoverIn: () => hover(p.uid), onHoverOut: () => hover(null) } as object) : {})}
-              delayLongPress={350}
-              accessibilityLabel={profile?.username}
-              style={{ position: 'absolute', left: p.x * scale - size / 2, top: p.y * scale - size / 2, zIndex: label === p.uid ? 10 : 0 }}
-            >
-              <View style={{ borderRadius: size, borderWidth: mark ? 3 : 2, borderColor: mark ? HIGHLIGHT : t.outline, backgroundColor: t.surface }}>
-                <Avatar uri={profile?.photoUrl} name={profile?.username} size={size - (mark ? 6 : 4)} />
-              </View>
-              {label === p.uid && (
-                // The wrapper is wider than the picture so a long username is shown in full (it wraps instead of being cut).
-                <View style={[styles.tipWrap, { bottom: size + 4, left: (size - TIP_W) / 2 }]} pointerEvents="none">
-                  <View style={[styles.tip, { backgroundColor: t.text }]}>
-                    <Text style={{ color: t.background, fontSize: 12, fontWeight: '700', textAlign: 'center' }}>{profile?.username}</Text>
-                  </View>
-                </View>
-              )}
-            </Pressable>
-          );
-        })}
-      </View>
+      {data.edges.map(({ a, b, friend }) => {
+        const p = sim.byId.get(a);
+        const q = sim.byId.get(b);
+        if (!p || !q) return null;
+        const x1 = cx + p.x * s;
+        const y1 = cy + p.y * s;
+        const x2 = cx + q.x * s;
+        const y2 = cy + q.y * s;
+        const len = Math.hypot(x2 - x1, y2 - y1);
+        const lit = litEdges.has([a, b].sort().join('|'));
+        return (
+          <View
+            key={`${a}-${b}`}
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              left: (x1 + x2) / 2 - len / 2,
+              top: (y1 + y2) / 2 - (lit ? 2 : 1),
+              width: len,
+              height: lit ? 4 : 2,
+              borderRadius: 2,
+              opacity: !hover || lit ? 1 : 0.15,
+              backgroundColor: friend ? FRIEND_LINE : DATING_LINE,
+              transform: [{ rotate: `${Math.atan2(y2 - y1, x2 - x1)}rad` }],
+            }}
+          />
+        );
+      })}
+      {sim.nodes.map((n) => {
+        const profile = data.profiles[n.id];
+        return (
+          <Person
+            key={n.id}
+            id={n.id}
+            x={cx + n.x * s}
+            y={cy + n.y * s}
+            size={n.r * 2}
+            marked={n.id === centerId || n.id === viewerId}
+            hovered={hover === n.id}
+            dim={!!hover && !onPath.has(n.id)}
+            name={profile?.username ?? ''}
+            photoUrl={profile?.photoUrl}
+            onDragStart={onDragStart}
+            onDrag={onDrag}
+            onDragEnd={onDragEnd}
+            onHover={setHover}
+          />
+        );
+      })}
     </View>
   );
 }
@@ -216,10 +422,11 @@ export function ConnectionGraph({ viewerId, centerId, username, reloadKey = 0 }:
     load();
   }, [load, reloadKey]);
 
-  const zoom = (d: number) => setScale((s) => Math.min(2.5, Math.max(0.5, +(s + d).toFixed(2))));
+  const setScaleTo = useCallback((v: number) => setScale(Math.min(MAX_SCALE, Math.max(MIN_SCALE, v))), []);
+  const zoom = useCallback((d: number) => setScale((s) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, +(s + d).toFixed(2)))), []);
   const hasGraph = state === 'ready' && data && data.nodes.length > 1;
 
-  const body = (h: number) => (
+  const body = (h: number, inModal: boolean) => (
     <>
       {state === 'loading' && <ActivityIndicator color={t.primary} style={{ height: h }} />}
       {state === 'error' && (
@@ -238,7 +445,7 @@ export function ConnectionGraph({ viewerId, centerId, username, reloadKey = 0 }:
           </Text>
         </View>
       )}
-      {hasGraph && data && <GraphCanvas data={data} scale={scale} height={h} centerId={centerId} viewerId={viewerId} recenter={recenter} />}
+      {hasGraph && data && <GraphCanvas data={data} scale={scale} height={h} centerId={centerId} viewerId={viewerId} recenter={recenter} onZoom={zoom} onScale={setScaleTo} pinchZoom={inModal} />}
       {hasGraph && <Legend />}
     </>
   );
@@ -258,11 +465,11 @@ export function ConnectionGraph({ viewerId, centerId, username, reloadKey = 0 }:
         <Text style={{ color: t.text, fontWeight: '700', fontSize: 16 }}>Connections</Text>
         {controls(false)}
       </View>
-      {body(300)}
+      {body(300, false)}
       <Text style={{ color: t.textSecondary, fontSize: 11, textAlign: 'center', paddingBottom: 8 }}>
         {Platform.OS === 'web'
-          ? 'Click a picture to open the profile, hover over it to see the username.'
-          : 'Tap a picture to open the profile, press and hold to see the username.'}
+          ? 'Click a picture to open the profile. Hover to see the username and the way to the center. Drag to move, scroll to zoom.'
+          : 'Tap a picture to open the profile. Hold or drag it to see the username and the way to the center. Pinch to zoom in full screen.'}
       </Text>
 
       <Modal visible={full} animationType="fade" supportedOrientations={['portrait', 'landscape']} onRequestClose={() => setFull(false)}>
@@ -271,7 +478,7 @@ export function ConnectionGraph({ viewerId, centerId, username, reloadKey = 0 }:
             <Text style={{ color: t.text, fontWeight: '700', fontSize: 18 }}>Connections</Text>
             {controls(true)}
           </View>
-          {body(Math.max(180, winH - 90))}
+          {body(Math.max(180, winH - 90), true)}
         </SafeAreaView>
       </Modal>
     </View>
