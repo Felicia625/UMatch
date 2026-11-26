@@ -165,8 +165,8 @@ export default function UserList() {
           <View style={[styles.notice, { backgroundColor: t.surface, borderColor: t.outline }]}>
             <Ionicons name="information-circle-outline" size={20} color={t.primary} />
             <Text style={{ flex: 1, color: t.text, fontSize: 13 }}>
-              {`${otherMode} ${otherMode === 1 ? 'person' : 'people'} in ${me?.friendFirst ? 'Dating' : 'Friend first'} mode also liked you. ` +
-                `Switch to ${me?.friendFirst ? 'Dating' : 'Friend first'} mode with the Friend first switch on your Profile tab to see them.`}
+              {`${otherMode} ${otherMode === 1 ? 'person' : 'people'} in ${me?.friendFirst ? 'Match mode' : 'Friend Mode'} also liked you. ` +
+                `Switch to ${me?.friendFirst ? 'Match mode' : 'Friend Mode'} with the Friend Mode switch on your Profile tab to see them.`}
             </Text>
           </View>
         </View>
@@ -236,7 +236,7 @@ export default function UserList() {
                   <View style={[styles.modeBadge, { backgroundColor: t.surface }]}>
                     <Ionicons name={likeModes[item.uid] === 'friend' ? 'thumbs-up' : 'heart'} size={13} color={t.primary} />
                     <Text style={{ color: t.text, fontSize: 11, fontWeight: '600' }}>
-                      {likeModes[item.uid] === 'friend' ? 'Friend first' : 'Dating'}
+                      {likeModes[item.uid] === 'friend' ? 'Friend' : 'Match'}
                     </Text>
                   </View>
                 )}

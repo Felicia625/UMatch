@@ -14,7 +14,7 @@ import {
 import { db } from '../config/firebase';
 import { UserProfile } from '../types';
 import { ensureMatch, likeModeName } from './swipes';
-import { isCompatible } from '../utils/preferences';
+import { LikeMode, splitLikers } from '../utils/likeModes';
 import { getUser, getUsersByIds as loadUsers } from './users';
 
 async function mySwipes(myId: string) {
@@ -32,9 +32,10 @@ export async function getMyLikedIds(myId: string): Promise<string[]> {
 }
 
 /**
- * Everyone who liked me, including people I like back (mutual), so the list stays useful after an unlike: I can see
- * who liked me and connect again later. LikesFragment downloaded every swipes document to find these; an
- * array-contains query does the same job on the server.
+ * Who liked me, in the mode I am in now. What counts is the mode each like was made in (stored in the liker's
+ * swipes document), not the mode the liker is in today: if B liked me as a friend and later switched to Match mode,
+ * B still shows up while I am in Friend Mode, and the other way round. Likes made in the other mode are not listed;
+ * the ones I have not liked back are counted so the screen can say how many are waiting there.
  */
 export async function getUsersWhoLikedMe(myId: string): Promise<{ users: UserProfile[]; otherMode: number }> {
   const [likedMe, me, mine] = await Promise.all([
@@ -42,16 +43,19 @@ export async function getUsersWhoLikedMe(myId: string): Promise<{ users: UserPro
     getUser(myId),
     mySwipes(myId),
   ]);
+  const storedMode = new Map<string, LikeMode | undefined>(
+    likedMe.docs.map((d) => [d.id, (d.data().likeModes as Record<string, LikeMode> | undefined)?.[myId]]),
+  );
   const users = await loadUsers(likedMe.docs.map((d) => d.id).filter((id) => id !== myId));
   if (!me) return { users, otherMode: 0 };
-  // Only people in the same mode are listed. The others are counted so the screen can say how many are waiting in the
-  // other mode, but only those I have not liked back (someone I already like needs no reminder).
-  const sameMode = users.filter((u) => isCompatible(me, u));
-  const waiting = users.filter((u) => !isCompatible(me, u) && !mine.liked.includes(u.uid));
-  return { users: sameMode, otherMode: waiting.length };
+  const { here, waiting } = splitLikers(
+    me,
+    users.map((user) => ({ user, stored: storedMode.get(user.uid) })),
+    new Set(mine.liked),
+  );
+  return { users: here, otherMode: waiting.length };
 }
 
-/** Everyone I like, plus the mode each like was made in (likes made before modes were stored have no entry). */
 export async function getUsersILiked(
   myId: string,
 ): Promise<{ users: UserProfile[]; likeModes: Record<string, 'friend' | 'dating'> }> {

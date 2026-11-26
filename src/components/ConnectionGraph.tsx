@@ -495,8 +495,8 @@ function Legend() {
   );
   return (
     <View style={styles.legend}>
-      {item(DATING_LINE, 'Dating mode')}
-      {item(FRIEND_LINE, 'Friend first')}
+      {item(DATING_LINE, 'Match')}
+      {item(FRIEND_LINE, 'Friend')}
     </View>
   );
 }

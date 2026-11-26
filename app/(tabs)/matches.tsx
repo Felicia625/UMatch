@@ -23,7 +23,7 @@ const TABS: { key: MatchStatus; label: string }[] = [
 type ModeFilter = 'all' | 'dating' | 'friend';
 const MODES: { key: ModeFilter; label: string; icon: 'heart' | 'thumbs-up' | null }[] = [
   { key: 'all', label: 'All', icon: null },
-  { key: 'dating', label: 'Dating', icon: 'heart' },
+  { key: 'dating', label: 'Match', icon: 'heart' },
   { key: 'friend', label: 'Friend', icon: 'thumbs-up' },
 ];
 
@@ -217,7 +217,7 @@ export default function Matches() {
                     name={isFriendMatch(item) ? 'thumbs-up' : 'heart'}
                     size={14}
                     color={t.primary}
-                    accessibilityLabel={isFriendMatch(item) ? 'Friend match' : 'Dating match'}
+                    accessibilityLabel={isFriendMatch(item) ? 'Friend match' : 'Match'}
                   />
                 </View>
                 <Text style={{ color: t.textSecondary }} numberOfLines={1}>

@@ -8,7 +8,7 @@ const ITEMS = [
   ['👋', 'Swipe to Connect', "Swipe right to like, left to pass. When both people like each other, you are connected and can start chatting!"],
   ['💬', 'Chat Features', 'Long press (or right-click on the website) messages to copy, reply, edit, pin, or delete. Use pinned messages for important info.'],
   ['👤', 'Profile Management', 'Edit your profile, set preferences, and manage your likes from the Profile tab.'],
-  ['🤝', 'Friend First Mode', 'Turn on Friend first to meet people as friends. You will only see other people who also use it, and gender does not matter. Turn it off again anytime in your profile.'],
+  ['🤝', 'Friend Mode', 'Turn on Friend Mode to meet people as friends. You will only see other people who also use it, and gender does not matter. Turn it off again anytime in your profile.'],
   ['🔒', 'Safety & Privacy', 'Block users if needed. Only UMN students can see your profile.'],
 ];
 

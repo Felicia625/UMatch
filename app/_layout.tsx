@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { renderStackHeader } from '../src/components/AppHeader';
 import { DesktopShell } from '../src/components/DesktopShell';
 import { NotificationWatcher } from '../src/components/NotificationWatcher';
+import { WebScrollbar } from '../src/components/WebScrollbar';
 import { useThemeSettings } from '../src/constants/theme';
 import { AuthProvider, isSignedIn, useAuth } from '../src/providers/AuthProvider';
 import { ThemeProvider } from '../src/providers/ThemeProvider';
@@ -38,6 +39,7 @@ function AuthGate() {
 
   return (
     <>
+      <WebScrollbar />
       {/* White icons on the pink title bar (and in dark mode); dark icons only on the light login screens. */}
       <StatusBar style={darkMode || segments[0] !== '(auth)' ? 'light' : 'dark'} />
       <DesktopShell>

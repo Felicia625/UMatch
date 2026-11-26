@@ -117,10 +117,10 @@ export default function ProfileView() {
               <Ionicons name="information-circle" size={22} color={t.primary} />
               <Text style={{ flexShrink: 1, color: t.text, fontSize: 13, lineHeight: 19, textAlign: 'center' }}>
                 {profile.friendFirst
-                  ? `${profile.username} is in Friend first mode, so you can only like them when you are in Friend first mode too.`
+                  ? `${profile.username} is in Friend Mode, so you can only like them when you are in Friend Mode too.`
                   : me.friendFirst
-                    ? `${profile.username} is in Dating mode, so you can only like them when you turn Friend first mode off.`
-                    : `${profile.username} is in Dating mode, but you can only like people of the opposite gender in this mode.`}
+                    ? `${profile.username} is in Match mode, so you can only like them when you turn Friend Mode off.`
+                    : `${profile.username} is in Match mode, but you can only like people of the opposite gender in this mode.`}
               </Text>
             </View>
           )}
@@ -133,7 +133,7 @@ export default function ProfileView() {
             {!isSelf && (
               <View style={[styles.modeBadge, { backgroundColor: t.surface }]}>
                 <Ionicons name={profile.friendFirst ? 'thumbs-up' : 'heart'} size={14} color={t.primary} />
-                <Text style={{ color: t.text, fontSize: 12, fontWeight: '600' }}>{profile.friendFirst ? 'Friend first mode' : 'Dating mode'}</Text>
+                <Text style={{ color: t.text, fontSize: 12, fontWeight: '600' }}>{profile.friendFirst ? 'Friend Mode' : 'Match Mode'}</Text>
               </View>
             )}
             {canLike && (
