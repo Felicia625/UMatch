@@ -142,9 +142,10 @@ export default function Matches() {
   const list = (
     <View style={{ flex: 1, backgroundColor: t.background }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <View style={{ justifyContent: 'center' }}>
+        {/* The field's own bottom margin is removed here, otherwise the box is taller than the field and the icon sits low. */}
+        <View style={{ justifyContent: 'center', marginBottom: 12 }}>
           <Ionicons name="search" size={18} color={t.textSecondary} style={styles.searchIcon} />
-          <TextField placeholder="Search matches" value={search} onChangeText={setSearch} style={{ paddingLeft: 42 }} />
+          <TextField placeholder="Search matches" value={search} onChangeText={setSearch} style={{ paddingLeft: 42, marginBottom: 0 }} />
         </View>
       </View>
 
